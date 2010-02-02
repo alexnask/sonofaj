@@ -83,7 +83,7 @@ SArgument: class {
 }
 
 SFunction: class extends SNode {
-    returnType, extern_, doc: String
+    returnType, extern_, doc, unmangled_, fullName: String
     modifiers, genericTypes: ArrayList<String>
     arguments: ArrayList<SArgument>
 
@@ -103,6 +103,10 @@ SFunction: class extends SNode {
         extern_ = entity["extern", String] // can also be null
         // returnType
         returnType = entity["returnType", String] // can also be null
+        // unmangled
+        unmangled_ = entity["unmangled", String] // can also be null
+        // fullName
+        fullName = entity["fullName", String]
         // doc
         doc = entity["doc", String] // can also be null
         // arguments
@@ -132,7 +136,7 @@ SMemberFunction: class extends SFunction {
 
 SGlobalVariable: class extends SNode {
     modifiers: ArrayList<String>
-    value, varType, extern_: String
+    value, varType, extern_, unmangled_, fullName: String
 
     init: func ~dadadadam (=repo, =parent) {
         type = "globalVariable"
@@ -150,11 +154,33 @@ SGlobalVariable: class extends SNode {
         varType = entity["varType", String]
         // extern
         extern_ = entity["extern", String] // can also be null
+        // unmangled
+        unmangled_ = entity["unmangled", String] // can also be null
+        // fullName
+        fullName = entity["fullName", String]
     }
 }
 
 SField: class extends SGlobalVariable {
-    init: func ~hihihihihi {
+    modifiers: ArrayList<String>
+    value, varType, extern_: String
+
+    init: func ~dadadadam (=repo, =parent) {
+        type = "field"
+    }
+
+    read: func (value: Value<Pointer>) {
+        entity := value value as ValueMap
+        // name
+        name = entity["name", String]
+        // modifiers
+        modifiers = readStringList(entity["modifiers", ValueList])
+        // value
+        this value = entity["value", String]
+        // varType
+        varType = entity["varType", String]
+        // extern
+        extern_ = entity["extern", String] // can also be null
     }
 }
 
@@ -166,7 +192,7 @@ SMember: class {
 SClass: class extends SType {
     genericTypes: ArrayList<String>
     members: ArrayList<SMember>
-    extends_, doc: String
+    extends_, doc, unmangled_, fullName: String
     abstract_: Bool
 
     init: func ~wurst (=repo, =parent) {
@@ -183,6 +209,10 @@ SClass: class extends SType {
         extends_ = entity["extends", String] // can also be null
         // abstract
         abstract_ = entity["abstract", Bool]
+        // unmangled_
+        unmangled_ = entity["unmangled", String] // can also be null
+        // fullName
+        fullName = entity["fullName", String]
         // doc
         doc = entity["doc", String] // can also be null
         // members
@@ -201,7 +231,7 @@ SClass: class extends SType {
 
 SCover: class extends SType {
     members: ArrayList<SMember>
-    extends_, doc, from_: String
+    extends_, doc, from_, unmangled_, fullName: String
 
     init: func ~krautsalat_dasistdochmeinlieblingsessen (=repo, =parent) {
         type = "cover"
@@ -211,8 +241,10 @@ SCover: class extends SType {
         entity := value value as ValueMap
         // name
         name = entity["name", String]
-        // genericTypes
-        //genericTypes = readStringList(entity["genericTypes", ValueList]) // we don't have it yet.
+        // unmangled
+        unmangled_ = entity["unmangled", String] // can also be null
+        // fullName
+        fullName = entity["fullName", String]
         // extends
         extends_ = entity["extends", String] // can also be null
         // from
