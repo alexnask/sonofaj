@@ -268,6 +268,7 @@ SCover: class extends SType {
 SModule: class extends SNode {
     children: HashMap<SNode>
     imports: ArrayList<String>
+    path: String
 
     init: func ~hihi(=repo, =parent) {
         type = "module"
@@ -296,5 +297,6 @@ SModule: class extends SNode {
     readModule: func (value: Value<Pointer>) {
         entity := value value as ValueMap
         imports = readStringList(entity["imports", ValueList])
+        path = entity["path", String]
     }
 }

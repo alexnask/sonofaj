@@ -28,6 +28,10 @@ Repository: class {
         cache[module]
     }
 
+    getModules: func -> HashMap<SModule> {
+        cache
+    }
+
     loadModule: func (module: String) -> SModule {
         reader := FileReader new(getModuleFilename(module))
         parser := SimpleParser new()
