@@ -1,0 +1,1 @@
+[["!module",{"tag":"!module","type":"module","imports":["lang/math","lang/vararg","lang/memory","lang/system","lang/stdio","lang/types"]}],["exit",{"arguments":[["","Int",null]],"extern":true,"tag":"exit","name":"exit","unmangled":false,"doc":null,"genericTypes":[],"fullName":"exit","modifiers":[],"type":"function","returnType":null}]]
