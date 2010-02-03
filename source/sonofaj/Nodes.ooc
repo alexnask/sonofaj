@@ -1,10 +1,11 @@
 use yajl
 
 import structs/[ArrayList, HashMap]
+import text/StringBuffer
 
 import yajl/Yajl
 
-import sonofaj/Repository
+import sonofaj/[Repository, Tag]
 
 readStringList: func (list: ValueList) -> ArrayList<String> {
     ret := ArrayList<String> new()
@@ -15,6 +16,23 @@ readStringList: func (list: ValueList) -> ArrayList<String> {
         ret add(value value as String)
     }
     ret
+}
+
+formatType: func (type: String) -> String {
+    tag := Tag parse(type)
+    suffixes := ""
+    while(true) {
+        if(tag hasArguments()) {
+            suffixes = suffixes append(match tag value {
+                case "pointer" => '*'
+                case "reference" => '@'
+                case => '?' /* TODO */
+            })
+            tag = tag arguments get(0)
+        } else {
+            return tag value + suffixes
+        }
+    }
 }
 
 JSONException: class extends Exception {
@@ -37,7 +55,7 @@ SNode: abstract class {
             case "memberFunction" => {
                 node := SMemberFunction new(repo, this)
                 node read(entity)
-                node
+                return node
             }
             case "class" => {
                 node := SClass new(repo, this)
@@ -89,6 +107,41 @@ SFunction: class extends SNode {
 
     init: func ~urgh(=repo, =parent) {
         type = "function"
+    }
+
+    getSignature: func -> String {
+        /* "$name~suffix $arguments -> $returntype */
+        buf := StringBuffer new()
+        // name
+        buf append(name) .append(' ')
+        // arguments
+        buf append('(')
+        first := true
+        for(idx in 0..arguments size()) {
+            arg := arguments[idx]
+            // comma?
+            if(first)
+                first = false
+            else
+                buf append(", ")
+            // name
+            buf append(arg name)
+            // check if we can group args
+            if(idx < arguments size() - 1)
+                if(arg type == arguments[idx + 1] type) // same type?
+                    if(arg modifiers isEmpty()) // no modifiers?
+                        if(arguments[idx + 1] modifiers isEmpty()) {
+                            // yeah, we can group!
+                            buf append(", ")
+                            continue
+                        }
+            // nope. write type.
+            buf append(": ") .append(formatType(arg type))
+        }
+        buf append(')')
+        if(returnType != null)
+            buf append(" -> %s" format(formatType(returnType)))
+        return buf toString()
     }
 
     read: func (value: Value<Pointer>) {

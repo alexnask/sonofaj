@@ -1,5 +1,8 @@
 import io/[File, FileWriter, Writer]
-import sonofaj/[Nodes, Repository, Visitor]
+import text/StringTokenizer
+import structs/ArrayList
+
+import sonofaj/[Doc, Nodes, Repository, Visitor]
 import sonofaj/backends/Backend
 
 RSTWriter: class {
@@ -24,7 +27,14 @@ RSTWriter: class {
     }
 
     writeLine: func (line: String) {
-        writer write(indentString) .write(line) .write("\n")
+        if(line contains('\n')) {
+            for(newLine in line split('\n') toArrayList()) {
+                newLine println()
+                writeLine(newLine)
+            }
+        } else {
+            writer write(indentString) .write(line) .write("\n")
+        }
     }
 
     close: func {
@@ -38,7 +48,13 @@ RSTVisitor: class extends Visitor {
     init: func (=rst) {}
 
     visitFunction: func (node: SFunction) {
-        rst writeLine(".. function:: %s" format(node name))
+        rst writeLine(".. function:: %s" format(node getSignature()))
+        rst indent()
+        rst writeLine("")
+        if(node doc != null) {
+            rst writeLine(formatDoc(node doc))
+        }
+        rst dedent()
     }
     visitClass: func (node: SClass) {
         rst writeLine(".. class:: %s" format(node name))
