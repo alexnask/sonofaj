@@ -6,7 +6,7 @@ formatDoc: func (doc: String) -> String {
     docStripped := doc substring(3, doc length() - 2) /* without / ** ... * / */
     for(c: Char in docStripped) {
         if(afterNewline) {
-            if(c != ' ' && c != '*') {
+            if(c != ' ' && c != '*' && c != '\t') {
                 afterNewline = false
             } else {
                 continue

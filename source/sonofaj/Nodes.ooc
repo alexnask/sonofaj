@@ -113,32 +113,34 @@ SFunction: class extends SNode {
         /* "$name~suffix $arguments -> $returntype */
         buf := StringBuffer new()
         // name
-        buf append(name) .append(' ')
-        // arguments
-        buf append('(')
-        first := true
-        for(idx in 0..arguments size()) {
-            arg := arguments[idx]
-            // comma?
-            if(first)
-                first = false
-            else
-                buf append(", ")
-            // name
-            buf append(arg name)
-            // check if we can group args
-            if(idx < arguments size() - 1)
-                if(arg type == arguments[idx + 1] type) // same type?
-                    if(arg modifiers isEmpty()) // no modifiers?
-                        if(arguments[idx + 1] modifiers isEmpty()) {
-                            // yeah, we can group!
-                            buf append(", ")
-                            continue
-                        }
-            // nope. write type.
-            buf append(": ") .append(formatType(arg type))
+        buf append(name) 
+        if(!arguments isEmpty()) {
+            // arguments
+            buf append(" (")
+            first := true
+            for(idx in 0..arguments size()) {
+                arg := arguments[idx]
+                // comma?
+                if(first)
+                    first = false
+                else
+                    buf append(", ")
+                // name
+                buf append(arg name)
+                // check if we can group args
+                if(idx < arguments size() - 1)
+                    if(arg type == arguments[idx + 1] type) // same type?
+                        if(arg modifiers isEmpty()) // no modifiers?
+                            if(arguments[idx + 1] modifiers isEmpty()) {
+                                // yeah, we can group!
+                                buf append(", ")
+                                continue
+                            }
+                // nope. write type.
+                buf append(": ") .append(formatType(arg type))
+            }
+            buf append(')')
         }
-        buf append(')')
         if(returnType != null)
             buf append(" -> %s" format(formatType(returnType)))
         return buf toString()
@@ -218,7 +220,7 @@ SField: class extends SGlobalVariable {
     modifiers: ArrayList<String>
     value, varType, extern_: String
 
-    init: func ~dadadadam (=repo, =parent) {
+    init: func ~HURZ (=repo, =parent) {
         type = "field"
     }
 
@@ -278,6 +280,25 @@ SClass: class extends SType {
             node := createNode(membersObject get(1))
             member node = node
             members add(member)
+        }
+    }
+
+    getIdentifier: func -> String {
+        if(!genericTypes isEmpty()) {
+            buf := StringBuffer new()
+            buf append(name) .append('<')
+            first := true
+            for(type in genericTypes) {
+                if(first)
+                    first = false
+                else
+                    buf append(", ")
+                buf append(type)
+            }
+            buf append('>')
+            return buf toString()
+        } else {
+            return name
         }
     }
 }

@@ -29,7 +29,6 @@ RSTWriter: class {
     writeLine: func (line: String) {
         if(line contains('\n')) {
             for(newLine in line split('\n') toArrayList()) {
-                newLine println()
                 writeLine(newLine)
             }
         } else {
@@ -47,20 +46,56 @@ RSTVisitor: class extends Visitor {
 
     init: func (=rst) {}
 
-    visitFunction: func (node: SFunction) {
-        rst writeLine(".. function:: %s" format(node getSignature()))
+    visitFunction: func ~withDirective (node: SFunction, directive: String) {
+        rst writeLine(".. %s:: %s" format(directive, node getSignature()))
+        // stuff.
         rst indent()
         rst writeLine("")
+        // doc
         if(node doc != null) {
             rst writeLine(formatDoc(node doc))
+            rst writeLine("")
+        }
+        // end stuff.
+        rst dedent()
+    }
+    
+    visitFunction: func (node: SFunction) {
+        visitFunction(node, "function")
+    }
+
+    visitGlobalVariable: func ~withDirective (node: SGlobalVariable, directive: String) {
+        rst writeLine(".. %s:: %s" format(directive, node name)) .writeLine("")
+    }
+
+    visitGlobalVariable: func (node: SGlobalVariable) {
+        visitGlobalVariable(node, "globalVariable")
+    }
+
+    visitClass: func (node: SClass) {
+        rst writeLine(".. class:: %s" format(node getIdentifier()))
+        // stuff!
+        rst indent()
+        rst writeLine("")
+        // doc
+        if(node doc != null) {
+            rst writeLine(formatDoc(node doc))
+            rst writeLine("")
+        }
+        // members.
+        for(member in node members) {
+            match member node type {
+                case "memberFunction" => {
+                    visitFunction(member node, "memberfunction")
+                }
+                case "field" => {
+                    visitGlobalVariable(member node, "field")
+                }
+            }
         }
         rst dedent()
     }
-    visitClass: func (node: SClass) {
-        rst writeLine(".. class:: %s" format(node name))
-    }
     visitCover: func (node: SCover) {}
-    visitGlobalVariable: func (node: SGlobalVariable) {}
 }
 
 SphinxRSTBackend: class extends Backend {
