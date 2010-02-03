@@ -204,7 +204,7 @@ SClass: class extends SType {
         // name
         name = entity["name", String]
         // genericTypes
-        //genericTypes = readStringList(entity["genericTypes", ValueList]) // we don't have it yet.
+        genericTypes = readStringList(entity["genericTypes", ValueList])
         // extends
         extends_ = entity["extends", String] // can also be null
         // abstract
