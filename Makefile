@@ -1,5 +1,5 @@
 sonofaj: source/sonofaj.ooc source/sonofaj/*.ooc source/sonofaj/*/*.ooc
-	ooc -sourcepath=source -noclean -v -g sonofaj.ooc
+	ooc -sourcepath=source -noclean -v -g -driver=sequence sonofaj.ooc
 
 repo: test.ooc
 	ooc -backend=json -outpath=repo test.ooc

@@ -37,7 +37,7 @@ Repository: class {
         parser := SimpleParser new()
         parser parseAll(reader)
         reader close()
-        node := SModule new(this, null)
+        node := SModule new(this)
         node read(parser getValue())
         node
     }

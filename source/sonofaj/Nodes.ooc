@@ -43,42 +43,43 @@ JSONException: class extends Exception {
 
 SNode: abstract class {
     repo: Repository
+    module: SModule
     name, type: String
     parent: SNode
 
-    init: func (=repo, =parent) {}
+    init: func (=repo, =parent, =module) {}
     read: abstract func (value: Value<Pointer>)
 
     createNode: func (entity: Value<Pointer>) -> This {
         value := (entity value as ValueMap)["type", String]
         match value {
             case "memberFunction" => {
-                node := SMemberFunction new(repo, this)
+                node := SMemberFunction new(repo, this, module)
                 node read(entity)
                 return node
             }
             case "class" => {
-                node := SClass new(repo, this)
+                node := SClass new(repo, this, module)
                 node read(entity)
                 return node
             }
             case "cover" => {
-                node := SCover new(repo, this)
+                node := SCover new(repo, this, module)
                 node read(entity)
                 return node
             }
             case "function" => {
-                node := SFunction new(repo, this)
+                node := SFunction new(repo, this, module)
                 node read(entity)
                 return node
             }
             case "globalVariable" => {
-                node := SGlobalVariable new(repo, this)
+                node := SGlobalVariable new(repo, this, module)
                 node read(entity)
                 return node
             }
             case "field" => {
-                node := SField new(repo, this)
+                node := SField new(repo, this, module)
                 node read(entity)
                 return node
             }
@@ -105,7 +106,7 @@ SFunction: class extends SNode {
     modifiers, genericTypes: ArrayList<String>
     arguments: ArrayList<SArgument>
 
-    init: func ~urgh(=repo, =parent) {
+    init: func ~urgh(=repo, =parent, =module) {
         type = "function"
     }
 
@@ -184,7 +185,7 @@ SFunction: class extends SNode {
 }
 
 SMemberFunction: class extends SFunction {
-    init: func ~bringtomiopiopiumbringtopiumdenopium (=repo, =parent) {
+    init: func ~bringtomiopiopiumbringtopiumdenopium (=repo, =parent, =module) {
         type = "memberFunction"
     }
 }
@@ -193,7 +194,7 @@ SGlobalVariable: class extends SNode {
     modifiers: ArrayList<String>
     value, varType, extern_, unmangled_, fullName: String
 
-    init: func ~dadadadam (=repo, =parent) {
+    init: func ~dadadadam (=repo, =parent, =module) {
         type = "globalVariable"
     }
 
@@ -220,7 +221,7 @@ SField: class extends SGlobalVariable {
     modifiers: ArrayList<String>
     value, varType, extern_: String
 
-    init: func ~HURZ (=repo, =parent) {
+    init: func ~HURZ (=repo, =parent, =module) {
         type = "field"
     }
 
@@ -250,7 +251,7 @@ SClass: class extends SType {
     extends_, doc, unmangled_, fullName: String
     abstract_: Bool
 
-    init: func ~wurst (=repo, =parent) {
+    init: func ~wurst (=repo, =parent, =module) {
         type = "class"
     }
 
@@ -307,7 +308,7 @@ SCover: class extends SType {
     members: ArrayList<SMember>
     extends_, doc, from_, unmangled_, fullName: String
 
-    init: func ~krautsalat_dasistdochmeinlieblingsessen (=repo, =parent) {
+    init: func ~krautsalat_dasistdochmeinlieblingsessen (=repo, =parent, =module) {
         type = "cover"
     }
 
@@ -344,9 +345,13 @@ SModule: class extends SNode {
     imports: ArrayList<String>
     path: String
 
-    init: func ~hihi(=repo, =parent) {
+    init: func ~hihi(=repo, =parent, =module) {
         type = "module"
         children = HashMap<SNode> new()
+    }
+
+    init: func ~lazy(=repo) {
+        this(repo, null, this)
     }
 
     createChild: func (entity: Value<Pointer>) {
