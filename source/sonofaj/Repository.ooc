@@ -43,6 +43,13 @@ Repository: class {
     }
     
     getModuleFilename: func (module: String) -> String {
+        filename := getModuleFilenameNoCry(module)
+        if(filename == null)
+            ModuleNotFoundException new(This, "Module not found: %s" format(module)) throw()
+        return filename
+    }
+
+    getModuleFilenameNoCry: func (module: String) -> String {
         parts := module split('/') toArrayList()
         lastIndex := parts lastIndex()
         parts[lastIndex] = parts[lastIndex] append(".json")
@@ -52,8 +59,7 @@ Repository: class {
                 return subdir getChild(path) path
             }
         }
-        ModuleNotFoundException new(This, "Module not found: %s" format(module)) throw()
-        null
+        null    
     }
 
     getModuleFilenames: func ~entry -> ArrayList<String> {

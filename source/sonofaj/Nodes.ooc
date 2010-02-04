@@ -1,7 +1,7 @@
 use yajl
 
 import structs/[ArrayList, HashMap]
-import text/StringBuffer
+import text/[StringBuffer, StringTokenizer]
 
 import yajl/Yajl
 
@@ -159,19 +159,19 @@ SFunction: class extends SNode {
                 else
                     buf append(", ")
                 // name
-                if(arg name isEmpty())
+                if(!arg name isEmpty())
                     buf append(arg name)
                 if(arg name == "...") // varargs!
                     continue
                 // check if we can group args
-                if(idx < arguments size() - 1)
-                    if(arg type == arguments[idx + 1] type) // same type?
-                        if(arg modifiers isEmpty()) // no modifiers?
-                            if(arguments[idx + 1] modifiers isEmpty()) {
-                                // yeah, we can group!
-                                buf append(", ")
-                                continue
-                            }
+                if(!arg name isEmpty())
+                    if(idx < arguments size() - 1)
+                        if(arg type == arguments[idx + 1] type) // same type?
+                            if(arg modifiers isEmpty()) // no modifiers?
+                                if(arguments[idx + 1] modifiers isEmpty()) {
+                                    // yeah, we can group!
+                                    continue
+                                }
                 // nope. write type.
                 if(!arg name isEmpty())
                     buf append(": ")
@@ -261,10 +261,16 @@ SGlobalVariable: class extends SNode {
         varType = entity["varType", String]
         // extern
         extern_ = entity["extern", String] // can also be null
-        // unmangled
-        unmangled_ = entity["unmangled", String] // can also be null
+        // unmangled; dirty workaround since j/ooc has problems with decls inside of version blocks not considered global
+        if(entity contains("unmangled"))
+            unmangled_ = entity["unmangled", String] // can also be null
+        else
+            unmangled_ = null
         // fullName
-        fullName = entity["fullName", String]
+        if(entity contains("fullName"))
+            fullName = entity["fullName", String]
+        else
+            fullName = null
     }
 }
 
@@ -432,6 +438,26 @@ SModule: class extends SNode {
         path = entity["path", String]
     }
 
+    resolveModule: func (name: String) -> String {
+        if(name contains("..")) {
+            /* relative path ... */
+            pathSplitted := path split('/') toArrayList()
+            pathSplitted removeLast()
+            while(name startsWith("../")) {
+                pathSplitted removeLast()
+                name = name substring(3)
+            }
+            pathSplitted add(name)
+            return pathSplitted join('/')
+        } else if(path contains('/')) {
+            testPathArr := [this path substring(0, this path indexOf('/')), name] as ArrayList<String>
+            testPath := testPathArr join('/')
+            if(repo getModuleFilenameNoCry(testPath) != null)
+                return testPath
+        }
+        return name
+    }
+
     resolveName: func (name: String, searchImported: Bool) -> SNode {
         if(name == "Func")
             return funcType
@@ -444,7 +470,7 @@ SModule: class extends SNode {
         // look in imported modules if `searchImported` is true.
         if(searchImported) {
             for(importedName in imports) {
-                importedModule := repo getModule(importedName)
+                importedModule := repo getModule(resolveModule(importedName))
                 node := importedModule resolveName(name, false) // do not walk into imported modules here.
                 if(node != null)
                     return node
@@ -460,7 +486,7 @@ SModule: class extends SNode {
     resolveType: func (name: String) -> SType {
         node := resolveName(name)
         if(!node || !node instanceOf(SType))
-            TypeException new(This, "Couldn't resolve type: '%s'" format(name)) throw()
+            TypeException new(This, "Couldn't resolve type: '%s' in '%s'" format(name, path)) throw()
         return node
     }
 }
