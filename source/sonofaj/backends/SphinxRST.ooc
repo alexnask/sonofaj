@@ -134,6 +134,12 @@ SphinxRSTBackend: class extends Backend {
         file parent() mkdirs()
         rst := RSTWriter new(FileWriter new(file))
         visitor := RSTVisitor new(rst)
+        /* headline & .. module directive. */
+        rst writeLine(module path) \
+           .writeLine("=" * module path length()) \
+           .writeLine("") \
+           .writeLine(".. module:: %s" format(module path)) \
+           .writeLine("")
         visitor visitChildren(module)
         rst close()
     }
