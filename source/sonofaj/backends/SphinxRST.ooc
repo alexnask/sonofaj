@@ -95,7 +95,30 @@ RSTVisitor: class extends Visitor {
         }
         rst dedent()
     }
-    visitCover: func (node: SCover) {}
+ 
+    visitCover: func (node: SCover) {
+        rst writeLine(".. cover:: %s" format(node getIdentifier()))
+        // stuff!
+        rst indent()
+        rst writeLine("")
+        // doc
+        if(node doc != null) {
+            rst writeLine(formatDoc(node doc))
+            rst writeLine("")
+        }
+        // members.
+        for(member in node members) {
+            match member node type {
+                case "memberFunction" => {
+                    visitFunction(member node, "memberfunction")
+                }
+                case "field" => {
+                    visitGlobalVariable(member node, "field")
+                }
+            }
+        }
+        rst dedent()
+    }
 }
 
 SphinxRSTBackend: class extends Backend {
