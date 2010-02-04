@@ -4,7 +4,7 @@ import sonofaj/backends/SphinxRST
 
 main: func {
     repo := Repository new(File new("repo"))
-    repo getModule("test") .getModule("structs/ArrayList") .getModule("structs/List")
+    repo getAllModules()
     backend := SphinxRSTBackend new(repo)
     backend run()
 }

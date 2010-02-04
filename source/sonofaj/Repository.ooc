@@ -48,7 +48,7 @@ Repository: class {
         parts[lastIndex] = parts[lastIndex] append(".json")
         path := parts join(File separator)
         for(subdir: File in root getChildren()) {
-            if(subdir getChild(path) exists()) {
+            if(subdir isDir() && subdir getChild(path) exists()) {
                 return subdir getChild(path) path
             }
         }
@@ -56,4 +56,36 @@ Repository: class {
         null
     }
 
+    getModuleFilenames: func ~entry -> ArrayList<String> {
+        names := ArrayList<String> new()
+        for(dir in root getChildren())
+            names addAll(getModuleFilenames(dir))
+        names
+    }
+
+    getModuleFilenames: func (dir: File) -> ArrayList<String> {
+        // first, get all that we have here. Let's say "*.json" is a module.
+        names := ArrayList<String> new()
+        for(child in dir getChildren()) {
+            if(child isFile() && child name() endsWith(".json")) {
+                childName := child name()
+                names add(childName substring(0, childName length() - 5))
+            }
+        }
+        // now, get all subdirectories.
+        for(child in dir getChildren()) {
+            if(child isDir()) {
+                childName := child name()
+                for(name in getModuleFilenames(child)) {
+                    names add("%s/%s" format(childName, name))
+                }
+            }
+        }
+        return names
+    }
+
+    getAllModules: func {
+        for(name in getModuleFilenames())
+            getModule(name)
+    }
 }
