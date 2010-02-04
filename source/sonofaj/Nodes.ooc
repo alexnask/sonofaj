@@ -159,7 +159,8 @@ SFunction: class extends SNode {
                 else
                     buf append(", ")
                 // name
-                buf append(arg name)
+                if(arg name isEmpty())
+                    buf append(arg name)
                 if(arg name == "...") // varargs!
                     continue
                 // check if we can group args
@@ -172,7 +173,9 @@ SFunction: class extends SNode {
                                 continue
                             }
                 // nope. write type.
-                buf append(": ") .append(formatType(arg type))
+                if(!arg name isEmpty())
+                    buf append(": ")
+                buf append(formatType(arg type))
             }
             buf append(')')
         }
