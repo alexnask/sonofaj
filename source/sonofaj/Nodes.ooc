@@ -18,24 +18,14 @@ readStringList: func (list: ValueList) -> ArrayList<String> {
     ret
 }
 
-formatType: func (type: String) -> String {
-    tag := Tag parse(type)
-    suffixes := ""
-    while(true) {
-        if(tag hasArguments()) {
-            suffixes = suffixes append(match tag value {
-                case "pointer" => '*'
-                case "reference" => '@'
-                case => '?' /* TODO */
-            })
-            tag = tag arguments get(0)
-        } else {
-            return tag value + suffixes
-        }
+
+JSONException: class extends Exception {
+    init: func ~withMsg (msg: String) {
+        super(msg)
     }
 }
 
-JSONException: class extends Exception {
+TypeException: class extends Exception {
     init: func ~withMsg (msg: String) {
         super(msg)
     }
@@ -49,6 +39,28 @@ SNode: abstract class {
 
     init: func (=repo, =parent, =module) {}
     read: abstract func (value: Value<Pointer>)
+
+    formatType: func (type: String) -> String {
+        tag := Tag parse(type)
+        suffixes := ""
+        while(true) {
+            if(tag hasArguments()) {
+                suffixes = suffixes append(match tag value {
+                    case "pointer" => '*'
+                    case "reference" => '@'
+                    case => '?' /* TODO */
+                })
+                tag = tag arguments get(0)
+            } else {
+                // get the type identifier
+                return getTypeIdentifier(tag value) + suffixes
+            }
+        }
+    }
+
+    getTypeIdentifier: func (name: String) -> String {
+        module resolveType(name) getIdentifier()
+    }
 
     createNode: func (entity: Value<Pointer>) -> This {
         value := (entity value as ValueMap)["type", String]
@@ -93,7 +105,18 @@ SNode: abstract class {
 
 
 SType: abstract class extends SNode {
+    getIdentifier: func -> String {
+        name
+    }
+}
 
+SFuncType: class extends SType {
+    init: func ~rhabarberbarbarabarbarbarenbarbierbierbar (=repo, =parent, =module) {
+        type = "!func"
+        name = "Func"
+    }
+
+    read: func (value: Value<Pointer>) {}
 }
 
 SArgument: class {
@@ -108,6 +131,15 @@ SFunction: class extends SNode {
 
     init: func ~urgh(=repo, =parent, =module) {
         type = "function"
+    }
+
+    getTypeIdentifier: func (name: String) -> String {
+        // generic type? 
+        for(gen in genericTypes)
+            if(gen == name)
+                return name
+        // no? :(
+        return module resolveType(name) getIdentifier()
     }
 
     getSignature: func -> String {
@@ -128,6 +160,8 @@ SFunction: class extends SNode {
                     buf append(", ")
                 // name
                 buf append(arg name)
+                if(arg name == "...") // varargs!
+                    continue
                 // check if we can group args
                 if(idx < arguments size() - 1)
                     if(arg type == arguments[idx + 1] type) // same type?
@@ -187,6 +221,20 @@ SFunction: class extends SNode {
 SMemberFunction: class extends SFunction {
     init: func ~bringtomiopiopiumbringtopiumdenopium (=repo, =parent, =module) {
         type = "memberFunction"
+    }
+
+    getTypeIdentifier: func (name: String) -> String {
+        // generic type? 
+        for(gen in genericTypes)
+            if(gen == name)
+                return name
+        // generic type of my class?
+        if(parent instanceOf(SClass))
+            for(gen in parent as SClass genericTypes)
+                if(gen == name)
+                    return name
+        // no? :(
+        return module resolveType(name) getIdentifier()
     }
 }
 
@@ -343,11 +391,13 @@ SCover: class extends SType {
 SModule: class extends SNode {
     children: HashMap<SNode>
     imports: ArrayList<String>
+    funcType: SFuncType
     path: String
 
     init: func ~hihi(=repo, =parent, =module) {
         type = "module"
         children = HashMap<SNode> new()
+        funcType = SFuncType new(repo, parent, this)
     }
 
     init: func ~lazy(=repo) {
@@ -377,5 +427,37 @@ SModule: class extends SNode {
         entity := value value as ValueMap
         imports = readStringList(entity["imports", ValueList])
         path = entity["path", String]
+    }
+
+    resolveName: func (name: String, searchImported: Bool) -> SNode {
+        if(name == "Func")
+            return funcType
+        /* TODO: do that with exceptions. */
+        for(node in children) {
+            if(node name == name) {
+                return node
+            }
+        }
+        // look in imported modules if `searchImported` is true.
+        if(searchImported) {
+            for(importedName in imports) {
+                importedModule := repo getModule(importedName)
+                node := importedModule resolveName(name, false) // do not walk into imported modules here.
+                if(node != null)
+                    return node
+            }
+        }
+        return null
+    }
+
+    resolveName: func ~entry (name: String) -> SNode {
+        resolveName(name, true)
+    }
+
+    resolveType: func (name: String) -> SType {
+        node := resolveName(name)
+        if(!node || !node instanceOf(SType))
+            TypeException new(This, "Couldn't resolve type: '%s'" format(name)) throw()
+        return node
     }
 }

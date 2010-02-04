@@ -22,7 +22,7 @@ Repository: class {
         cache = HashMap<SModule> new()
     }
 
-    getModule: func (module: String) {
+    getModule: func (module: String) -> SModule {
         if(!cache contains(module))
             cache[module] = loadModule(module)
         cache[module]
