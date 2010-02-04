@@ -1,4 +1,4 @@
-sonofaj: source/sonofaj.ooc source/sonofaj/*.ooc source/sonofaj/*/*.ooc
+sonofaj: source/sonofaj.ooc source/sonofaj/*.ooc source/sonofaj/*/*.ooc repo
 	ooc -sourcepath=source -noclean -v -g -driver=sequence sonofaj.ooc
 
 repo: get-sdk.ooc
