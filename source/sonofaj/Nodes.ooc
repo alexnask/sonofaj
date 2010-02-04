@@ -133,6 +133,13 @@ SFunction: class extends SNode {
         type = "function"
     }
 
+    hasModifier: func (mod: String) -> Bool {
+        for(having in modifiers)
+            if(having == mod)
+                return true
+        return false
+    }
+
     getTypeIdentifier: func (name: String) -> String {
         // generic type? 
         for(gen in genericTypes)
