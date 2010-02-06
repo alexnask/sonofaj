@@ -28,7 +28,7 @@ RSTWriter: class {
 
     writeLine: func (line: String) {
         if(line contains('\n')) {
-            for(newLine in line split('\n') toArrayList()) {
+            for(newLine in line split('\n', true) toArrayList()) {
                 writeLine(newLine)
             }
         } else {

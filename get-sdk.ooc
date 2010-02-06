@@ -1,4 +1,3 @@
-import native/win32/types
 import structs/HashBag
 import structs/Stack
 import structs/HashMap
@@ -14,11 +13,8 @@ import lang/system
 import lang/stdio
 import lang/types
 import os/Env
-import os/test
 import os/mmap
 import os/PipeReader
-import os/native/ProcessUnix
-import os/native/ProcessWin32
 import os/wait
 import os/Process
 import os/unistd
@@ -27,9 +23,8 @@ import os/Pipe
 import os/Time
 import os/FileDescriptor
 import os/Terminal
-import io/native/dirent
-import io/native/FileWin32
-import io/native/FileUnix
+import threading/Runnable
+import threading/Thread
 import io/FileWriter
 import io/Reader
 import io/File

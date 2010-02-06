@@ -5,7 +5,7 @@ repo: get-sdk.ooc
 	ooc -backend=json -outpath=repo get-sdk.ooc
 
 clean:
-	rm -f sonofaj
+	rm -rfv sonofaj repo ooc_tmp
 
 .phony: clean
 
