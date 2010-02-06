@@ -279,12 +279,13 @@ SGlobalVariable: class extends SNode {
         else
             fullName = null
     }
+
+    getTypeIdentifier: func ~my -> String {
+        formatType(varType)
+    }
 }
 
 SField: class extends SGlobalVariable {
-    modifiers: ArrayList<String>
-    value, varType, extern_: String
-
     init: func ~HURZ (=repo, =parent, =module) {
         type = "field"
     }
@@ -301,6 +302,20 @@ SField: class extends SGlobalVariable {
         varType = entity["varType", String]
         // extern
         extern_ = entity["extern", String] // can also be null
+    }
+
+    getTypeIdentifier: func ~my -> String {
+        return formatType(varType)
+    }
+
+    getTypeIdentifier: func (name: String) -> String {
+        // generic type of my class?
+        if(parent instanceOf(SClass))
+            for(gen in parent as SClass genericTypes)
+                if(gen == name)
+                    return name
+        // no? :(
+        return module resolveType(name) getIdentifier()
     }
 }
 

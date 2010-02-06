@@ -65,7 +65,7 @@ RSTVisitor: class extends Visitor {
     }
 
     visitGlobalVariable: func ~withDirective (node: SGlobalVariable, directive: String) {
-        rst writeLine(".. %s:: %s" format(directive, node name)) .writeLine("")
+        rst writeLine(".. %s:: %s -> %s" format(directive, node name, node getTypeIdentifier())) .writeLine("")
     }
 
     visitGlobalVariable: func (node: SGlobalVariable) {
