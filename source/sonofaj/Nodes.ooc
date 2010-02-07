@@ -77,7 +77,7 @@ SNode: abstract class {
     formatTypeRef: func (type: String) -> String {
         base := getBaseType(type)
         suffixes := getSuffixes(type)
-        getTypeRef(base) + suffixes
+        getTypeRef(base) + ' ' + suffixes
     }
 
     formatType: func (type: String) -> String {
@@ -492,12 +492,12 @@ SClass: class extends SType {
             buf := StringBuffer new()
             buf append(name) .append('<')
             first := true
-            for(type in genericTypes) {
+            for(type_ in genericTypes) {
                 if(first)
                     first = false
                 else
                     buf append(", ")
-                buf append(type)
+                buf append(type_)
             }
             buf append('>')
             return buf toString()

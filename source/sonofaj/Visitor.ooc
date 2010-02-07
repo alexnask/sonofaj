@@ -18,6 +18,7 @@ Visitor: abstract class {
             case "class" => { visitClass(node) }
             case "cover" => { visitCover(node) }
             case "globalVariable" => { visitGlobalVariable(node) }
+            case => "WTF? '%s' has type '%s' which is unknown." format(node name, node type) println()
         }
     }
 }
