@@ -458,6 +458,13 @@ SClass: class extends SType {
         ":class:`~%s %s`" format(module getIdentifier(), getIdentifier())
     }
 
+    getExtendsRef: func -> String {
+        if(extends_ != null)
+            return formatTypeRef(extends_)
+        else
+            return null
+    }
+
     read: func (value: Value<Pointer>) {
         entity := value value as ValueMap
         // name
@@ -515,6 +522,13 @@ SCover: class extends SType {
         type = "cover"
     }
 
+    getExtendsRef: func -> String {
+        if(extends_ != null)
+            return formatTypeRef(extends_)
+        else
+            return null
+    }
+
     getRef: func -> String {
         ":cover:`~%s %s`" format(module getIdentifier(), getIdentifier())
     }
@@ -530,7 +544,7 @@ SCover: class extends SType {
         // extends
         extends_ = entity["extends", String] // can also be null
         // from
-        from_ = entity["from", Bool]
+        from_ = entity["from", String]
         // doc
         doc = entity["doc", String] // can also be null
         // members

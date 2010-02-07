@@ -77,6 +77,10 @@ RSTVisitor: class extends Visitor {
         // stuff!
         rst indent()
         rst writeLine("")
+        // extends
+        if(node extends_ != null) {
+            rst writeLine(":extends: %s" format(node getExtendsRef()))
+        }
         // doc
         if(node doc != null) {
             rst writeLine(formatDoc(node doc))
@@ -104,6 +108,14 @@ RSTVisitor: class extends Visitor {
         // stuff!
         rst indent()
         rst writeLine("")
+        // extends
+        if(node extends_ != null) {
+            rst writeLine(":extends: %s" format(node getExtendsRef()))
+        }
+        // from
+        if(node from_ != null) {
+            rst writeLine(":from: ``%s``" format(node from_))
+        }
         // doc
         if(node doc != null) {
             rst writeLine(formatDoc(node doc))
