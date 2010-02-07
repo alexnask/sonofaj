@@ -40,6 +40,46 @@ SNode: abstract class {
     init: func (=repo, =parent, =module) {}
     read: abstract func (value: Value<Pointer>)
 
+    getIdentifier: func -> String {
+        name
+    }
+
+    getBaseType: func (type: String) -> String {
+        tag := Tag parse(type)
+        while(true) {
+            if(tag hasArguments()) {
+                tag = tag arguments get(0)
+            } else {
+                // get the type identifier
+                return getTypeIdentifier(tag value)
+            }
+        }
+    }
+
+    getSuffixes: static func (type: String) -> String {
+        tag := Tag parse(type)
+        suffixes := ""
+        while(true) {
+            if(tag hasArguments()) {
+                suffixes = suffixes append(match tag value {
+                    case "pointer" => '*'
+                    case "reference" => '@'
+                    case => '?' /* TODO */
+                })
+                tag = tag arguments get(0)
+            } else {
+                // get the type identifier
+                return suffixes
+            }
+        }
+    }
+
+    formatTypeRef: func (type: String) -> String {
+        base := getBaseType(type)
+        suffixes := getSuffixes(type)
+        getTypeRef(base) + suffixes
+    }
+
     formatType: func (type: String) -> String {
         tag := Tag parse(type)
         suffixes := ""
@@ -61,6 +101,12 @@ SNode: abstract class {
     getTypeIdentifier: func (name: String) -> String {
         module resolveType(name) getIdentifier()
     }
+
+    getTypeRef: func (name: String) -> String {
+        module resolveType(name) getRef()
+    }
+
+    getRef: abstract func -> String
 
     createNode: func (entity: Value<Pointer>) -> This {
         value := (entity value as ValueMap)["type", String]
@@ -116,6 +162,10 @@ SFuncType: class extends SType {
         name = "Func"
     }
 
+    getRef: func -> String {
+        "Func"
+    }
+
     read: func (value: Value<Pointer>) {}
 }
 
@@ -131,6 +181,10 @@ SFunction: class extends SNode {
 
     init: func ~urgh(=repo, =parent, =module) {
         type = "function"
+    }
+
+    getRef: func -> String {
+        ":func:`~%s %s`" format(module getIdentifier(), getIdentifier())
     }
 
     hasModifier: func (mod: String) -> Bool {
@@ -149,7 +203,16 @@ SFunction: class extends SNode {
         return module resolveType(name) getIdentifier()
     }
 
-    getSignature: func -> String {
+    getTypeRef: func (name: String) -> String {
+        // generic type? 
+        for(gen in genericTypes)
+            if(gen == name)
+                return name
+        // no? :(
+        return module resolveType(name) getRef()
+    }
+
+    getSignature: func (ref: Bool) -> String {
         /* "$name~suffix $arguments -> $returntype */
         buf := StringBuffer new()
         // name
@@ -182,13 +245,26 @@ SFunction: class extends SNode {
                 // nope. write type.
                 if(!arg name isEmpty())
                     buf append(": ")
-                buf append(formatType(arg type))
+                if(ref) {
+                    buf append(formatTypeRef(arg type))
+                } else {
+                    buf append(formatType(arg type))
+                }
             }
             buf append(')')
         }
-        if(returnType != null)
-            buf append(" -> %s" format(formatType(returnType)))
+        if(returnType != null) {
+            if(ref) {
+                buf append(" -> %s" format(formatTypeRef(returnType)))
+            } else {
+                buf append(" -> %s" format(formatType(returnType)))
+            }
+        }
         return buf toString()
+    }
+
+    getSignature: func ~noRef -> String {
+        getSignature(false)
     }
 
     read: func (value: Value<Pointer>) {
@@ -233,6 +309,10 @@ SMemberFunction: class extends SFunction {
         type = "memberFunction"
     }
 
+    getRef: func -> String {
+        ":mfunc:`~%s %s %s`" format(module getIdentifier(), parent getIdentifier(), getIdentifier())
+    }
+
     getTypeIdentifier: func (name: String) -> String {
         // generic type? 
         for(gen in genericTypes)
@@ -246,6 +326,20 @@ SMemberFunction: class extends SFunction {
         // no? :(
         return module resolveType(name) getIdentifier()
     }
+
+    getTypeRef: func (name: String) -> String {
+        // generic type? 
+        for(gen in genericTypes)
+            if(gen == name)
+                return name
+        // generic type of my class?
+        if(parent instanceOf(SClass))
+            for(gen in parent as SClass genericTypes)
+                if(gen == name)
+                    return name
+        // no? :(
+        return module resolveType(name) getRef()
+    }
 }
 
 SGlobalVariable: class extends SNode {
@@ -254,6 +348,10 @@ SGlobalVariable: class extends SNode {
 
     init: func ~dadadadam (=repo, =parent, =module) {
         type = "globalVariable"
+    }
+
+    getRef: func -> String {
+        ":var:`~%s %s`" format(module getIdentifier(), getIdentifier())
     }
 
     read: func (value: Value<Pointer>) {
@@ -283,11 +381,19 @@ SGlobalVariable: class extends SNode {
     getTypeIdentifier: func ~my -> String {
         formatType(varType)
     }
+
+    getTypeRef: func ~my -> String {
+        formatTypeRef(varType)
+    }
 }
 
 SField: class extends SGlobalVariable {
     init: func ~HURZ (=repo, =parent, =module) {
         type = "field"
+    }
+
+    getRef: func -> String {
+        ":field:`~%s %s %s`" format(module getIdentifier(), parent getIdentifier(), getIdentifier())
     }
 
     read: func (value: Value<Pointer>) {
@@ -308,6 +414,10 @@ SField: class extends SGlobalVariable {
         return formatType(varType)
     }
 
+    getTypeRef: func ~my -> String {
+        formatTypeRef(varType)
+    }
+
     getTypeIdentifier: func (name: String) -> String {
         // generic type of my class?
         if(parent instanceOf(SClass))
@@ -316,6 +426,16 @@ SField: class extends SGlobalVariable {
                     return name
         // no? :(
         return module resolveType(name) getIdentifier()
+    }
+
+    getTypeRef: func (name: String) -> String {
+        // generic type of my class?
+        if(parent instanceOf(SClass))
+            for(gen in parent as SClass genericTypes)
+                if(gen == name)
+                    return name
+        // no? :(
+        return module resolveType(name) getRef()
     }
 }
 
@@ -332,6 +452,10 @@ SClass: class extends SType {
 
     init: func ~wurst (=repo, =parent, =module) {
         type = "class"
+    }
+
+    getRef: func -> String {
+        ":class:`~%s %s`" format(module getIdentifier(), getIdentifier())
     }
 
     read: func (value: Value<Pointer>) {
@@ -391,6 +515,10 @@ SCover: class extends SType {
         type = "cover"
     }
 
+    getRef: func -> String {
+        ":cover:`~%s %s`" format(module getIdentifier(), getIdentifier())
+    }
+
     read: func (value: Value<Pointer>) {
         entity := value value as ValueMap
         // name
@@ -435,6 +563,10 @@ SModule: class extends SNode {
         this(repo, null, this)
     }
 
+    getRef: func -> String {
+        ":mod:`~%s`" format(getIdentifier())
+    }
+
     createChild: func (entity: Value<Pointer>) {
         node := createNode(entity)
         if(node != null) /* happens for the `module` node */
@@ -458,6 +590,7 @@ SModule: class extends SNode {
         entity := value value as ValueMap
         imports = readStringList(entity["imports", ValueList])
         path = entity["path", String]
+        name = path
     }
 
     resolveModule: func (name: String) -> String {
@@ -481,6 +614,10 @@ SModule: class extends SNode {
     }
 
     resolveName: func (name: String, searchImported: Bool) -> SNode {
+        // strip generic definitions
+        if(name contains('<'))
+            name = name substring(0, name indexOf('<'))
+        // funcs have one type. hah.
         if(name == "Func")
             return funcType
         /* TODO: do that with exceptions. */

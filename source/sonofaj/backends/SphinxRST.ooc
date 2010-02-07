@@ -47,7 +47,7 @@ RSTVisitor: class extends Visitor {
     init: func (=rst) {}
 
     visitFunction: func ~withDirective (node: SFunction, directive: String) {
-        rst writeLine(".. %s:: %s" format(directive, node getSignature()))
+        rst writeLine(".. %s:: %s" format(directive, node getSignature(true)))
         // stuff.
         rst indent()
         rst writeLine("")
@@ -65,11 +65,11 @@ RSTVisitor: class extends Visitor {
     }
 
     visitGlobalVariable: func ~withDirective (node: SGlobalVariable, directive: String) {
-        rst writeLine(".. %s:: %s -> %s" format(directive, node name, node getTypeIdentifier())) .writeLine("")
+        rst writeLine(".. %s:: %s -> %s" format(directive, node name, node getTypeRef())) .writeLine("")
     }
 
     visitGlobalVariable: func (node: SGlobalVariable) {
-        visitGlobalVariable(node, "data")
+        visitGlobalVariable(node, "var")
     }
 
     visitClass: func (node: SClass) {
