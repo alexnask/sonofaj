@@ -1,5 +1,5 @@
 import structs/ArrayList
-import text/StringBuffer
+import text/Buffer
 
 ParsingError: class extends Exception {
     init: func ~withMsg (.msg) {
@@ -24,7 +24,7 @@ Tag: class {
     }
 
     parse: static func (iter: Iterator<Char>, lastChar: Char*) -> Tag {
-        buf := StringBuffer new()
+        buf := Buffer new()
         tag: Tag
         /* first: skip whitespaces and commas. */
         next: Char = iter next()

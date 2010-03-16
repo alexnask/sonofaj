@@ -1,7 +1,7 @@
 use yajl
 
 import structs/[ArrayList, HashMap]
-import text/[StringBuffer, StringTokenizer]
+import text/[Buffer, StringTokenizer]
 
 import yajl/Yajl
 
@@ -214,7 +214,7 @@ SFunction: class extends SNode {
 
     getSignature: func (ref: Bool) -> String {
         /* "$name~suffix $arguments -> $returntype */
-        buf := StringBuffer new()
+        buf := Buffer new()
         // name
         buf append(name) 
         if(!arguments isEmpty()) {
@@ -496,7 +496,7 @@ SClass: class extends SType {
 
     getIdentifier: func -> String {
         if(!genericTypes isEmpty()) {
-            buf := StringBuffer new()
+            buf := Buffer new()
             buf append(name) .append('<')
             first := true
             for(type_ in genericTypes) {

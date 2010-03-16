@@ -1,5 +1,5 @@
 import structs/ArrayList
-import text/[StringBuffer, StringTokenizer]
+import text/[Buffer, StringTokenizer]
 
 formatDoc: func (doc: String) -> String {
     docStripped := doc substring(3, doc length() - 2) /* without / ** ... * / */
