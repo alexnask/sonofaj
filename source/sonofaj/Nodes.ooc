@@ -366,16 +366,16 @@ SGlobalVariable: class extends SNode {
         varType = entity["varType", String]
         // extern
         extern_ = entity["extern", String] // can also be null
-        // unmangled; dirty workaround since j/ooc has problems with decls inside of version blocks not considered global
-        if(entity contains("unmangled"))
+        // unmangled; dirty workaround since j/ooc has problems with decls inside of version blocks not considered global; and even dirtier now.
+        unmangled_ = false
+        if(entity contains("unmangled")) {
             unmangled_ = entity["unmangled", String] // can also be null
-        else
-            unmangled_ = null
+        }
         // fullName
-        if(entity contains("fullName"))
+        fullName = null
+        if(entity contains("fullName")) {
             fullName = entity["fullName", String]
-        else
-            fullName = null
+        }
     }
 
     getTypeIdentifier: func ~my -> String {
@@ -562,14 +562,14 @@ SCover: class extends SType {
 }
 
 SModule: class extends SNode {
-    children: HashMap<SNode>
+    children: HashMap<String, SNode>
     imports: ArrayList<String>
     funcType: SFuncType
     path: String
 
     init: func ~hihi(=repo, =parent, =module) {
         type = "module"
-        children = HashMap<SNode> new()
+        children = HashMap<String, SNode> new()
         funcType = SFuncType new(repo, parent, this)
     }
 

@@ -16,10 +16,10 @@ ModuleNotFoundException: class extends Exception {
 
 Repository: class {
     root: File
-    cache: HashMap<SModule>
+    cache: HashMap<String, SModule>
 
     init: func (=root) {
-        cache = HashMap<SModule> new()
+        cache = HashMap<String, SModule> new()
     }
 
     getModule: func (module: String) -> SModule {
@@ -28,7 +28,7 @@ Repository: class {
         cache[module]
     }
 
-    getModules: func -> HashMap<SModule> {
+    getModules: func -> HashMap<String, SModule> {
         cache
     }
 
