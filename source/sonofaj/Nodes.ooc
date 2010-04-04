@@ -574,7 +574,7 @@ SModule: class extends SNode {
     }
 
     init: func ~lazy(=repo) {
-        this(repo, null, this)
+        init(repo, null, this)
     }
 
     getRef: func -> String {

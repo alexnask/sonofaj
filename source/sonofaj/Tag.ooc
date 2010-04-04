@@ -12,7 +12,7 @@ Tag: class {
     arguments: ArrayList<Tag>
 
     init: func (=value) {
-        this(value, null)    
+        init(value, null)    
     }
 
     init: func ~withArguments (=value, =arguments) {

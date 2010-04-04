@@ -91,9 +91,9 @@ RSTVisitor: class extends Visitor {
             match member node type {
                 case "memberFunction" => {
                     if(member node as SFunction hasModifier("static"))
-                        visitFunction(member node, "staticmemberfunction")
+                        visitFunction(member node, "staticmethod")
                     else
-                        visitFunction(member node, "memberfunction")
+                        visitFunction(member node, "method")
                 }
                 case "field" => {
                     visitGlobalVariable(member node, "field")
@@ -125,7 +125,7 @@ RSTVisitor: class extends Visitor {
         for(member in node members) {
             match member node type {
                 case "memberFunction" => {
-                    visitFunction(member node, "memberfunction")
+                    visitFunction(member node, "method")
                 }
                 case "field" => {
                     visitGlobalVariable(member node, "field")
