@@ -503,7 +503,7 @@ SClass: class extends SType {
                 if(first)
                     first = false
                 else
-                    buf append(", ")
+                    buf append(",")
                 buf append(type_)
             }
             buf append('>')
