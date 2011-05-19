@@ -256,8 +256,6 @@ SFunction: class extends SNode {
                 // name
                 if(!arg name empty?())
                     buf append(arg name)
-                if(arg name == "...") // varargs!
-                    continue
                 // check if we can group args
                 if(!arg name empty?())
                     if(idx < arguments getSize() - 1)
@@ -270,7 +268,10 @@ SFunction: class extends SNode {
                 // nope. write type.
                 if(!arg name empty?())
                     buf append(": ")
-                if(ref) {
+                if(arg name endsWith?("_generic")) {
+                    // Quick and dirty way, but in json genericTypes is always empty :(
+                    buf append(arg type)
+                } else if(ref) {
                     buf append(formatTypeRef(arg type))
                 } else {
                     buf append(formatType(arg type))
