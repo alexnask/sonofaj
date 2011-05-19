@@ -268,8 +268,8 @@ SFunction: class extends SNode {
                 // nope. write type.
                 if(!arg name empty?())
                     buf append(": ")
-                if(arg name endsWith?("_generic")) {
-                    // Quick and dirty way, but in json genericTypes is always empty :(
+                if(arg name endsWith?("_generic") || genericTypes contains?(arg type)) {
+                    // Quick and dirty way, but in json genericTypes not alway full
                     buf append(arg type)
                 } else if(ref) {
                     buf append(formatTypeRef(arg type))
@@ -280,7 +280,9 @@ SFunction: class extends SNode {
             buf append(')')
         }
         if(returnType != null) {
-            if(ref) {
+            if(genericTypes contains?(returnType)) {
+                buf append(" -> " + returnType)
+            } else if(ref) {
                 buf append(" -> %s" format(formatTypeRef(returnType)))
             } else {
                 buf append(" -> %s" format(formatType(returnType)))
@@ -700,7 +702,7 @@ SModule: class extends SNode {
         return name
     }
 
-    resolveName: func (name: String, searchImported: Bool) -> SNode {
+    resolveName: func (name: String, searchImported: Bool, level := 1) -> SNode {
         // strip generic definitions
         if(name contains?('<'))
             name = name substring(0, name indexOf('<'))
@@ -718,13 +720,19 @@ SModule: class extends SNode {
         for(node in children) {
             if(node name == name) {
                 return node
+            } else if(node type == "class") {
+                if(node as SClass genericTypes contains?(name)) {
+                    // Class generics
+                    // TODO: Improve this :/
+                    return node
+                }
             }
         }
         // look in imported modules if `searchImported` is true.
-        if(searchImported) {
+        if(searchImported && level < 3) {
             for(importedName in imports) {
                 importedModule := repo getModule(resolveModule(importedName))
-                node := importedModule resolveName(name, false) // do not walk into imported modules here.
+                node := importedModule resolveName(name, true, level+1) // do not walk into imported modules here.
                 if(node != null)
                     return node
             }
