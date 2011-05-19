@@ -173,10 +173,24 @@ SFuncType: class extends SType {
     }
 
     getRef: func -> String {
-        "Func"
+        name
     }
 
-    read: func (value: Value<Pointer>) {}
+    read: func (value: Value<Pointer>)
+}
+
+SVarArgsType: class extends SType {
+    // Thank you fred for inspiring me that name from the ones you use =D
+    init : func ~bubaaaaaaaaaaaaaaaaaaaaaaaaaaaaa (=repo, =parent, =module) {
+        type = "VarArgs"
+        name = "..."
+    }
+    
+    getRef : func -> String {
+        name
+    }
+    
+    read: func (value : Value<Pointer>)
 }
 
 SArgument: class {
@@ -690,8 +704,15 @@ SModule: class extends SNode {
         if(name contains?('<'))
             name = name substring(0, name indexOf('<'))
         // All func types start with Func
-        if(name startsWith?("Func"))
-            return SFuncType new(repo, parent, this)
+        if(name startsWith?("Func")) {
+            f := SFuncType new(repo, parent, this)
+            f name = name
+            return f
+        }
+        // VarArgs
+        if(name == "..." || name == "VarArgs") {
+            return SVarArgsType new(repo, parent, this)
+        }
         /* TODO: do that with exceptions. */
         for(node in children) {
             if(node name == name) {
