@@ -2,7 +2,13 @@ import structs/ArrayList
 import text/StringTokenizer
 
 formatDoc: func (doc: String) -> String {
-    docStripped := doc substring(3, doc length() - 2) /* without / ** ... * / */
+    docStripped := doc
+    if(docStripped startsWith?("/**")) {
+        docStripped = docStripped substring(3)
+    }
+    if(docStripped endsWith?("*/")) {
+        docStripped = docStripped substring(0, docStripped length() - 2)
+    }
     lines := docStripped split('\n', true)
     maxIndentation := -1
     // find longest common indentation
