@@ -1,11 +1,12 @@
-use yajl
+import structs/[ArrayList, HashMap, HashBag]
+import text/StringTokenizer
 
-import structs/[ArrayList, HashMap]
-import text/[Buffer, StringTokenizer]
+use yajl
 
 import yajl/Yajl
 
 import sonofaj/[Repository, Tag]
+
 
 readStringList: func (list: ValueList) -> ArrayList<String> {
     ret := ArrayList<String> new()
@@ -37,7 +38,7 @@ SNode: abstract class {
     name, type: String
     parent: SNode
 
-    init: func (=repo, =parent, =module) {}
+    init: func (=repo, =parent, =module)
     read: abstract func (value: Value<Pointer>)
 
     getIdentifier: func -> String {
@@ -54,6 +55,7 @@ SNode: abstract class {
                 return getTypeIdentifier(tag value)
             }
         }
+        ""
     }
 
     getSuffixes: static func (type: String) -> String {
@@ -61,7 +63,7 @@ SNode: abstract class {
         suffixes := ""
         while(true) {
             if(tag hasArguments()) {
-                suffixes = suffixes append(match tag value {
+                suffixes = suffixes append(match (tag value) {
                     case "pointer" => '*'
                     case "reference" => '@'
                     case => '?' /* TODO */
@@ -72,6 +74,7 @@ SNode: abstract class {
                 return suffixes
             }
         }
+        ""
     }
 
     formatTypeRef: func (type: String) -> String {
@@ -85,7 +88,7 @@ SNode: abstract class {
         suffixes := ""
         while(true) {
             if(tag hasArguments()) {
-                suffixes = suffixes append(match tag value {
+                suffixes = suffixes append(match (tag value) {
                     case "pointer" => '*'
                     case "reference" => '@'
                     case => '?' /* TODO */
@@ -96,6 +99,7 @@ SNode: abstract class {
                 return getTypeIdentifier(tag value) + suffixes
             }
         }
+        ""
     }
 
     getTypeIdentifier: func (name: String) -> String {
@@ -110,9 +114,9 @@ SNode: abstract class {
 
     createNode: func (entity: Value<Pointer>) -> This {
         value := (entity value as ValueMap)["type", String]
-        match value {
-            case "memberFunction" => {
-                node := SMemberFunction new(repo, this, module)
+        match (value) {
+            case "method" => {
+                node := SMethod new(repo, this, module)
                 node read(entity)
                 return node
             }
@@ -151,6 +155,7 @@ SNode: abstract class {
 
 
 SType: abstract class extends SNode {
+    init: func (=repo, =parent, =module)
     getIdentifier: func -> String {
         name
     }
@@ -175,7 +180,8 @@ SArgument: class {
 }
 
 SFunction: class extends SNode {
-    returnType, extern_, doc, unmangled_, fullName: String
+    returnType, doc,  fullName: String
+    extern_, unmangled_ : Bool
     modifiers, genericTypes: ArrayList<String>
     arguments: ArrayList<SArgument>
 
@@ -217,11 +223,11 @@ SFunction: class extends SNode {
         buf := Buffer new()
         // name
         buf append(name) 
-        if(!arguments isEmpty()) {
+        if(!arguments empty?() && arguments != null) {
             // arguments
             buf append(" (")
             first := true
-            for(idx in 0..arguments size()) {
+            for(idx in 0..arguments getSize()) {
                 arg := arguments[idx]
                 // comma?
                 if(first)
@@ -229,21 +235,21 @@ SFunction: class extends SNode {
                 else
                     buf append(", ")
                 // name
-                if(!arg name isEmpty())
+                if(!arg name empty?())
                     buf append(arg name)
                 if(arg name == "...") // varargs!
                     continue
                 // check if we can group args
-                if(!arg name isEmpty())
-                    if(idx < arguments size() - 1)
+                if(!arg name empty?())
+                    if(idx < arguments getSize() - 1)
                         if(arg type == arguments[idx + 1] type) // same type?
-                            if(arg modifiers isEmpty()) // no modifiers?
-                                if(arguments[idx + 1] modifiers isEmpty()) {
+                            if(arg modifiers empty?()) // no modifiers?
+                                if(arguments[idx + 1] modifiers empty?()) {
                                     // yeah, we can group!
                                     continue
                                 }
                 // nope. write type.
-                if(!arg name isEmpty())
+                if(!arg name empty?())
                     buf append(": ")
                 if(ref) {
                     buf append(formatTypeRef(arg type))
@@ -276,11 +282,12 @@ SFunction: class extends SNode {
         // genericTypes
         genericTypes = readStringList(entity["genericTypes", ValueList])
         // extern
-        extern_ = entity["extern", String] // can also be null
+        extern_ = entity["extern", Bool]
         // returnType
         returnType = entity["returnType", String] // can also be null
+        
         // unmangled
-        unmangled_ = entity["unmangled", String] // can also be null
+        unmangled_ = entity["unmangled", Bool]
         // fullName
         fullName = entity["fullName", String]
         // doc
@@ -304,9 +311,9 @@ SFunction: class extends SNode {
     }
 }
 
-SMemberFunction: class extends SFunction {
+SMethod: class extends SFunction {
     init: func ~bringtomiopiopiumbringtopiumdenopium (=repo, =parent, =module) {
-        type = "memberFunction"
+        type = "method"
     }
 
     getRef: func -> String {
@@ -319,7 +326,7 @@ SMemberFunction: class extends SFunction {
             if(gen == name)
                 return name
         // generic type of my class?
-        if(parent instanceOf(SClass))
+        if(parent instanceOf?(SClass))
             for(gen in parent as SClass genericTypes)
                 if(gen == name)
                     return name
@@ -333,7 +340,7 @@ SMemberFunction: class extends SFunction {
             if(gen == name)
                 return name
         // generic type of my class?
-        if(parent instanceOf(SClass))
+        if(parent instanceOf?(SClass))
             for(gen in parent as SClass genericTypes)
                 if(gen == name)
                     return name
@@ -344,7 +351,8 @@ SMemberFunction: class extends SFunction {
 
 SGlobalVariable: class extends SNode {
     modifiers: ArrayList<String>
-    value, varType, extern_, unmangled_, fullName: String
+    value, varType, fullName: String
+    extern_, unmangled_ : Bool
 
     init: func ~dadadadam (=repo, =parent, =module) {
         type = "globalVariable"
@@ -365,17 +373,11 @@ SGlobalVariable: class extends SNode {
         // varType
         varType = entity["varType", String]
         // extern
-        extern_ = entity["extern", String] // can also be null
+        extern_ = entity["extern", Bool]
         // unmangled; dirty workaround since j/ooc has problems with decls inside of version blocks not considered global; and even dirtier now.
-        unmangled_ = false
-        if(entity contains("unmangled")) {
-            unmangled_ = entity["unmangled", String] // can also be null
-        }
+        unmangled_ = entity["unmangled", Bool]
         // fullName
-        fullName = null
-        if(entity contains("fullName")) {
-            fullName = entity["fullName", String]
-        }
+        fullName = entity["fullName", String]
     }
 
     getTypeIdentifier: func ~my -> String {
@@ -407,7 +409,7 @@ SField: class extends SGlobalVariable {
         // varType
         varType = entity["varType", String]
         // extern
-        extern_ = entity["extern", String] // can also be null
+        extern_ = entity["extern", Bool]
     }
 
     getTypeIdentifier: func ~my -> String {
@@ -420,7 +422,7 @@ SField: class extends SGlobalVariable {
 
     getTypeIdentifier: func (name: String) -> String {
         // generic type of my class?
-        if(parent instanceOf(SClass))
+        if(parent instanceOf?(SClass))
             for(gen in parent as SClass genericTypes)
                 if(gen == name)
                     return name
@@ -430,7 +432,7 @@ SField: class extends SGlobalVariable {
 
     getTypeRef: func (name: String) -> String {
         // generic type of my class?
-        if(parent instanceOf(SClass))
+        if(parent instanceOf?(SClass))
             for(gen in parent as SClass genericTypes)
                 if(gen == name)
                     return name
@@ -447,7 +449,7 @@ SMember: class {
 SClass: class extends SType {
     genericTypes: ArrayList<String>
     members: ArrayList<SMember>
-    extends_, doc, unmangled_, fullName: String
+    extends_, doc, fullName: String
     abstract_: Bool
 
     init: func ~wurst (=repo, =parent, =module) {
@@ -475,8 +477,6 @@ SClass: class extends SType {
         extends_ = entity["extends", String] // can also be null
         // abstract
         abstract_ = entity["abstract", Bool]
-        // unmangled_
-        unmangled_ = entity["unmangled", String] // can also be null
         // fullName
         fullName = entity["fullName", String]
         // doc
@@ -495,7 +495,7 @@ SClass: class extends SType {
     }
 
     getIdentifier: func -> String {
-        if(!genericTypes isEmpty()) {
+        if(!genericTypes empty?()) {
             buf := Buffer new()
             buf append(name) .append('<')
             first := true
@@ -516,7 +516,7 @@ SClass: class extends SType {
 
 SCover: class extends SType {
     members: ArrayList<SMember>
-    extends_, doc, from_, unmangled_, fullName: String
+    extends_, doc, from_, fullName: String
 
     init: func ~krautsalat_dasistdochmeinlieblingsessen (=repo, =parent, =module) {
         type = "cover"
@@ -537,8 +537,6 @@ SCover: class extends SType {
         entity := value value as ValueMap
         // name
         name = entity["name", String]
-        // unmangled
-        unmangled_ = entity["unmangled", String] // can also be null
         // fullName
         fullName = entity["fullName", String]
         // extends
@@ -562,15 +560,12 @@ SCover: class extends SType {
 }
 
 SModule: class extends SNode {
-    children: HashMap<String, SNode>
-    imports: ArrayList<String>
-    funcType: SFuncType
+    children := HashMap<String, SNode> new()
+    imports := ArrayList<String> new()
     path: String
 
     init: func ~hihi(=repo, =parent, =module) {
         type = "module"
-        children = HashMap<String, SNode> new()
-        funcType = SFuncType new(repo, parent, this)
     }
 
     init: func ~lazy(=repo) {
@@ -588,37 +583,58 @@ SModule: class extends SNode {
     }
 
     addNode: func (node: SNode) {
-        children put(node name, node)
+        children[node name] = node
     }
     
     read: func (value: Value<Pointer>) {
-        list := value value as ValueList
-        for(entryValue: Value<Pointer> in list) {
-            entry := entryValue value as ValueList
-            entity := entry get(1)
-            createChild(entity)
+        // We want the entities
+        if(value type == ValueMap) {
+            map := value value as ValueMap
+            readModule(value)
+            if(map getType("entities") == ValueList) {
+                entities := map["entities",ValueList]
+                if(entities != null) {
+                    for(entity in entities) {
+                        // Get all entities and read them
+                        if(entity != null) {
+                            if(entity type == ValueList) {
+                                createChild(entity value as ValueList get(1))
+                            }
+                        }
+                    }
+                }
+            } else {
+                keys := map getKeys()
+                keys each(|key| key println())
+                exit(0)
+            }
         }
     }
 
     readModule: func (value: Value<Pointer>) {
         entity := value value as ValueMap
-        imports = readStringList(entity["imports", ValueList])
-        path = entity["path", String]
-        name = path
+        if(entity getType("globalImports") == ValueList) {
+            imports = readStringList(entity["globalImports", ValueList])
+            // TODO: Manage namespaced imports
+        }
+        if(entity getType("path") == String) {
+            path = entity["path", String]
+            name = path
+        }
     }
 
     resolveModule: func (name: String) -> String {
-        if(name contains("..")) {
+        if(name contains?("..")) {
             /* relative path ... */
-            pathSplitted := path split('/') toArrayList()
+            pathSplitted := path split('/')
             pathSplitted removeLast()
-            while(name startsWith("../")) {
+            while(name startsWith?("../")) {
                 pathSplitted removeLast()
                 name = name substring(3)
             }
             pathSplitted add(name)
             return pathSplitted join('/')
-        } else if(path contains('/')) {
+        } else if(path contains?('/')) {
             testPathArr := [this path substring(0, this path indexOf('/')), name] as ArrayList<String>
             testPath := testPathArr join('/')
             if(repo getModuleFilenameNoCry(testPath) != null)
@@ -629,11 +645,11 @@ SModule: class extends SNode {
 
     resolveName: func (name: String, searchImported: Bool) -> SNode {
         // strip generic definitions
-        if(name contains('<'))
+        if(name contains?('<'))
             name = name substring(0, name indexOf('<'))
-        // funcs have one type. hah.
-        if(name == "Func")
-            return funcType
+        // All func types start with Func
+        if(name startsWith?("Func"))
+            return SFuncType new(repo, parent, this)
         /* TODO: do that with exceptions. */
         for(node in children) {
             if(node name == name) {
@@ -658,8 +674,9 @@ SModule: class extends SNode {
 
     resolveType: func (name: String) -> SType {
         node := resolveName(name)
-        if(!node || !node instanceOf(SType))
+        if(!node || !node instanceOf?(SType))
             TypeException new(This, "Couldn't resolve type: '%s' in '%s'" format(name, path)) throw()
-        return node
+        return node as SType
     }
 }
+

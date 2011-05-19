@@ -1,9 +1,8 @@
 import structs/ArrayList
-import text/Buffer
 
 ParsingError: class extends Exception {
-    init: func ~withMsg (.msg) {
-        super(msg)
+    init: func ~withMsg (.message) {
+        super(message)
     }
 }
 
@@ -28,20 +27,20 @@ Tag: class {
         tag: Tag
         /* first: skip whitespaces and commas. */
         next: Char = iter next()
-        while(next isWhitespace() || next == ',') {
+        while(next whitespace?() || next == ',') {
             next = iter next()
         }
         /* then: read the tag value. */
-        while(!next isWhitespace() && next != '(' && next != ',' && next != ')') {
+        while(!next whitespace?() && next != '(' && next != ',' && next != ')') {
             buf append(next)
-            if(!iter hasNext())
+            if(!iter hasNext?())
                 break
             next = iter next()
         }
         lastChar@ = next
         tag = Tag new(buf toString())
         /* then: do we have arguments? */
-        if(next == '(') {
+        if(next == '(' && iter next() != ')') {
             tag arguments = ArrayList<Tag> new()
             while(true) {
                 thisLastChar: Char
@@ -55,6 +54,7 @@ Tag: class {
                 } else {
                     ParsingError new("Huh! I didn't expect '%c'!" format(thisLastChar)) throw()
                     /* NOBODY expects '%c'!" */
+                    // -> I loled :o
                 }
             }
         }

@@ -13,11 +13,11 @@ Visitor: abstract class {
     }
 
     visit: func (node: SNode) {
-        match node type {
-            case "function" => { visitFunction(node) }
-            case "class" => { visitClass(node) }
-            case "cover" => { visitCover(node) }
-            case "globalVariable" => { visitGlobalVariable(node) }
+        match (node type) {
+            case "function" => { visitFunction(node as SFunction) }
+            case "class" => { visitClass(node as SClass) }
+            case "cover" => { visitCover(node as SCover) }
+            case "globalVariable" => { visitGlobalVariable(node as SGlobalVariable) }
             case => "WTF? '%s' has type '%s' which is unknown." format(node name, node type) println()
         }
     }

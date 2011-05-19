@@ -6,10 +6,10 @@ IGNORE = [
     'structs/RangeList',
 ]
 
-if not 'OOC_SDK' in os.environ:
+if not 'ROCK_SDK' in os.environ:
     raise Exception('You have to set $OOC_SDK')
 
-sdk = os.environ['OOC_SDK']
+sdk = os.environ['ROCK_SDK']
 
 def visit(root):
     root_len = len(root)

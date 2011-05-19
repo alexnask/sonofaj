@@ -1,18 +1,18 @@
 import structs/ArrayList
-import text/[Buffer, StringTokenizer]
+import text/StringTokenizer
 
 formatDoc: func (doc: String) -> String {
     docStripped := doc substring(3, doc length() - 2) /* without / ** ... * / */
-    lines := docStripped split('\n', true) toArrayList() as ArrayList<String>
+    lines := docStripped split('\n', true)
     maxIndentation := -1
     // find longest common indentation
-    for(idx in 1..lines size()) {
+    for(idx in 1..lines getSize()) {
         line := lines[idx] as String
         // calculate current indentation
         indentation := 0
         foundChar := false
         for(chr in line) {
-            if(chr isWhitespace() || chr == '*') { // '*' is also whitespace.
+            if(chr whitespace?() || chr == '*') { // '*' is also whitespace.
                 indentation += 1
             } else {
                 foundChar = true
@@ -31,8 +31,8 @@ formatDoc: func (doc: String) -> String {
     }
     // now strip the calculated indentation
     lines[0] = lines[0] trim("\t *") // the first line is just trimmed.
-    for(idx in 1..lines size()) {
-        if(!lines[idx] isEmpty())
+    for(idx in 1..lines getSize()) {
+        if(!lines[idx] empty?())
             lines[idx] = lines[idx] substring(maxIndentation)
     }
     lines join('\n')

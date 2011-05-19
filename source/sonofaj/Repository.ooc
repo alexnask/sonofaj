@@ -1,9 +1,6 @@
-use yajl
-
 import io/[File, FileReader]
 import structs/[ArrayList, HashMap]
 import text/StringTokenizer
-
 import yajl/Yajl
 
 import sonofaj/Nodes
@@ -16,14 +13,12 @@ ModuleNotFoundException: class extends Exception {
 
 Repository: class {
     root: File
-    cache: HashMap<String, SModule>
+    cache := HashMap<String, SModule> new()
 
-    init: func (=root) {
-        cache = HashMap<String, SModule> new()
-    }
+    init: func (=root)
 
     getModule: func (module: String) -> SModule {
-        if(!cache contains(module))
+        if(!cache contains?(module))
             cache[module] = loadModule(module)
         cache[module]
     }
@@ -33,6 +28,7 @@ Repository: class {
     }
 
     loadModule: func (module: String) -> SModule {
+        ("Loading module " + module) println()
         reader := FileReader new(getModuleFilename(module))
         parser := SimpleParser new()
         parser parseAll(reader)
@@ -50,12 +46,12 @@ Repository: class {
     }
 
     getModuleFilenameNoCry: func (module: String) -> String {
-        parts := module split('/') toArrayList()
+        parts := module split('/')
         lastIndex := parts lastIndex()
-        parts[lastIndex] = parts[lastIndex] append(".json")
+        parts[lastIndex] = parts[lastIndex] + ".json"
         path := parts join(File separator)
         for(subdir: File in root getChildren()) {
-            if(subdir isDir() && subdir getChild(path) exists()) {
+            if(subdir dir?() && subdir getChild(path) exists?()) {
                 return subdir getChild(path) path
             }
         }
@@ -73,14 +69,14 @@ Repository: class {
         // first, get all that we have here. Let's say "*.json" is a module.
         names := ArrayList<String> new()
         for(child in dir getChildren()) {
-            if(child isFile() && child name() endsWith(".json")) {
+            if(child file?() && child name() endsWith?(".json")) {
                 childName := child name()
                 names add(childName substring(0, childName length() - 5))
             }
         }
         // now, get all subdirectories.
         for(child in dir getChildren()) {
-            if(child isDir()) {
+            if(child dir?()) {
                 childName := child name()
                 for(name in getModuleFilenames(child)) {
                     names add("%s/%s" format(childName, name))
@@ -91,7 +87,8 @@ Repository: class {
     }
 
     getAllModules: func {
-        for(name in getModuleFilenames())
+        for(name in getModuleFilenames()) {
             getModule(name)
+        }
     }
 }

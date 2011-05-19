@@ -1,6 +1,6 @@
 import io/[File, FileWriter, Writer]
 import text/StringTokenizer
-import structs/ArrayList
+import structs/[ArrayList,HashMap]
 
 import sonofaj/[Doc, Nodes, Repository, Visitor]
 import sonofaj/backends/Backend
@@ -15,7 +15,7 @@ RSTWriter: class {
     }
 
     resetIndent: func (=indentLevel) {
-        indentString = "    " * indentLevel
+        indentString = "    " times(indentLevel)
     }
 
     indent: func {
@@ -27,8 +27,8 @@ RSTWriter: class {
     }
 
     writeLine: func (line: String) {
-        if(line contains('\n')) {
-            for(newLine in line split('\n', true) toArrayList()) {
+        if(line contains?('\n')) {
+            for(newLine in line split('\n', true)) {
                 writeLine(newLine)
             }
         } else {
@@ -47,6 +47,7 @@ RSTVisitor: class extends Visitor {
     init: func (=rst) {}
 
     visitFunction: func ~withDirective (node: SFunction, directive: String) {
+        // Works fine =D
         rst writeLine(".. %s:: %s" format(directive, node getSignature(true)))
         // stuff.
         rst indent()
@@ -70,7 +71,7 @@ RSTVisitor: class extends Visitor {
 
     visitGlobalVariable: func (node: SGlobalVariable) {
         visitGlobalVariable(node, "var")
-    }
+    } 
 
     visitClass: func (node: SClass) {
         rst writeLine(".. class:: %s" format(node getIdentifier()))
@@ -88,15 +89,15 @@ RSTVisitor: class extends Visitor {
         }
         // members.
         for(member in node members) {
-            match member node type {
-                case "memberFunction" => {
+            match (member node type) {
+                case "method" => {
                     if(member node as SFunction hasModifier("static"))
-                        visitFunction(member node, "staticmethod")
+                        visitFunction(member node as SFunction, "staticmethod")
                     else
-                        visitFunction(member node, "method")
+                        visitFunction(member node as SFunction, "method")
                 }
                 case "field" => {
-                    visitGlobalVariable(member node, "field")
+                    visitGlobalVariable(member node as SGlobalVariable, "field")
                 }
             }
         }
@@ -123,12 +124,12 @@ RSTVisitor: class extends Visitor {
         }
         // members.
         for(member in node members) {
-            match member node type {
-                case "memberFunction" => {
-                    visitFunction(member node, "method")
+            match (member node type) {
+                case "method" => {
+                    visitFunction(member node as SFunction, "method")
                 }
                 case "field" => {
-                    visitGlobalVariable(member node, "field")
+                    visitGlobalVariable(member node as SGlobalVariable, "field")
                 }
             }
         }
@@ -145,23 +146,28 @@ SphinxRSTBackend: class extends Backend {
     }
 
     handleModule: func (module: SModule) {
-        file := outPath getChild(module path + ".rst") /* TODO: does this work in all cases? */
-        file parent() mkdirs()
-        rst := RSTWriter new(FileWriter new(file))
-        visitor := RSTVisitor new(rst)
-        /* headline & .. module directive. */
-        rst writeLine(module path) \
-           .writeLine("=" * module path length()) \
-           .writeLine("") \
-           .writeLine(".. module:: %s" format(module path)) \
-           .writeLine("")
-        visitor visitChildren(module)
-        rst close()
+        if(module path != null && !module path empty?()) {
+            ("Handling module " + module name + ".") println()
+            file := outPath getChild(module path + ".rst") /* TODO: does this work in all cases? */
+            file parent() mkdirs()
+            rst := RSTWriter new(FileWriter new(file))
+            visitor := RSTVisitor new(rst)
+            /* headline & .. module directive. */
+            rst writeLine(module path) \
+               .writeLine("=" times(module path length())) \
+               .writeLine("") \
+               .writeLine(".. module:: %s" format(module path)) \
+               .writeLine("")
+            visitor visitChildren(module)
+            rst close()
+            ("Module " + module name + " handled.") println()
+        }
     }
 
     run: func {
-        for(module: SModule in repo getModules()) {
-            handleModule(module)
+        modules := repo getModules()
+        for(key in modules getKeys()) {
+            handleModule(modules[key])
         }
     }
 }
