@@ -4,6 +4,7 @@ Visitor: abstract class {
     visitFunction: abstract func (node: SFunction)
     visitClass: abstract func (node: SClass)
     visitCover: abstract func (node: SCover)
+    visitEnum: abstract func (node : SEnum)
     visitGlobalVariable: abstract func (node: SGlobalVariable)
     
     visitChildren: func (node: SModule) {
@@ -18,6 +19,7 @@ Visitor: abstract class {
             case "class" => { visitClass(node as SClass) }
             case "cover" => { visitCover(node as SCover) }
             case "globalVariable" => { visitGlobalVariable(node as SGlobalVariable) }
+            case "enum" => { visitEnum(node as SEnum) }
             case => "WTF? '%s' has type '%s' which is unknown." format(node name, node type) println()
         }
     }

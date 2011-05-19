@@ -41,6 +41,7 @@ Tag: class {
         tag = Tag new(buf toString())
         /* then: do we have arguments? */
         if(next == '(' && iter next() != ')') {
+            iter as ReverseIterator<Char> prev()
             tag arguments = ArrayList<Tag> new()
             while(true) {
                 thisLastChar: Char

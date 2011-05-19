@@ -130,6 +130,11 @@ SNode: abstract class {
                 node read(entity)
                 return node
             }
+            case "enum" => {
+                node := SEnum new(repo, this, module)
+                node read(entity)
+                return node
+            }
             case "function" => {
                 node := SFunction new(repo, this, module)
                 node read(entity)
@@ -559,6 +564,47 @@ SCover: class extends SType {
     }
 }
 
+// TODO: Add Interfaces
+// TODO: Add enums
+SEnumElement : class {
+    name : String
+    doc : String
+}
+
+SEnum : class extends SType {
+    members: ArrayList<SEnumElement>
+    extern_: Bool
+    doc: String
+    
+    init: func ~naimilasgermanika_egomilaoellinika (=repo, =parent, =module) {
+        type = "enum"
+    }
+
+    getRef: func -> String {
+        ":enum:`~%s %s`" format(module getIdentifier(), getIdentifier())
+    }
+
+    read: func (value: Value<Pointer>) {
+        entity := value value as ValueMap
+        // name
+        name = entity["name", String]
+        // extern
+        extern_ = entity["extern", Bool]
+        // doc
+        doc = entity["doc", String] // can also be null
+        // members
+        members = ArrayList<SMember> new()
+        membersList := entity["elements", ValueList]
+        for(membersValue: Value<ValueList> in membersList) {
+            membersObject := membersValue value as ValueList
+            member := SEnumElement new()
+            member name = membersObject[0, String]
+            member doc = membersObject[1, ValueMap]["doc",String]
+            members add(member)
+        }
+    }
+}
+
 SModule: class extends SNode {
     children := HashMap<String, SNode> new()
     imports := ArrayList<String> new()
@@ -603,10 +649,6 @@ SModule: class extends SNode {
                         }
                     }
                 }
-            } else {
-                keys := map getKeys()
-                keys each(|key| key println())
-                exit(0)
             }
         }
     }

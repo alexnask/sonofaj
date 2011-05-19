@@ -135,6 +135,27 @@ RSTVisitor: class extends Visitor {
         }
         rst dedent()
     }
+    
+    visitEnum: func (node: SEnum) {
+        rst writeLine(".. enum:: %s" format(node getIdentifier()))
+        // stuff!
+        rst indent()
+        rst writeLine("")
+        // doc
+        if(node doc != null) {
+            rst writeLine(formatDoc(node doc))
+            rst writeLine("")
+        }
+        // members.
+        for(member in node members) {
+            rst writeLine(".. enumElement:: %s" format(member name))
+            if(member doc != null) {
+                rst writeLine(formatDoc(member doc))
+                rst writeLine("")
+            }
+        }
+        rst dedent()
+    }
 }
 
 SphinxRSTBackend: class extends Backend {
@@ -147,7 +168,7 @@ SphinxRSTBackend: class extends Backend {
 
     handleModule: func (module: SModule) {
         if(module path != null && !module path empty?()) {
-            ("Handling module " + module name + ".") println()
+            ("Handling module " + module name + ".") println() 
             file := outPath getChild(module path + ".rst") /* TODO: does this work in all cases? */
             file parent() mkdirs()
             rst := RSTWriter new(FileWriter new(file))
