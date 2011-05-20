@@ -99,6 +99,9 @@ RSTVisitor: class extends Visitor {
                 case "field" => {
                     visitGlobalVariable(member node as SGlobalVariable, "field")
                 }
+                case "enum" => {
+                    visitEnum(member node as SEnum)
+                }
             }
         }
         rst dedent()

@@ -15,16 +15,55 @@ HtmlVisitor : class extends Visitor {
     
     visitClass : func(node : SClass) {
         identifier := node getIdentifier()
-        //html getTag("p","class",body)
-        body := html getTag("span","cname","Class %s" format(html getHtmlType(identifier)))
-        
+        html openTag("p","class")
+        html writeHtmlLine(html getTag("span","cname","Class %s" format(html getHtmlType(identifier))))
+        // Indent for members
+        html indent()
+        // Extends
+        if(node extends_ != null && !node extends_ empty?()) {
+            html write(HtmlWriter Ln)
+            html writeHtmlLine(html getTag("span","extends","Extends %s" format(html getHtmlType(node getExtendsRef()))))
+        }
+        // Doc
+        if(node doc != null && !node doc empty?()) {
+            html write(HtmlWriter Ln)
+            html writeHtmlLine(html getTag("span","doc",formatDoc(node doc)))
+        }
+        // Get members
+        for(member in node members) {
+            html write(HtmlWriter Ln)
+            match (member node type) {
+                case "method" => {
+                    if(member node as SFunction hasModifier("static"))
+                        visitFunction(member node as SFunction, "staticmethod")
+                    else
+                        visitFunction(member node as SFunction, "method")
+                }
+                case "field" => {
+                    visitGlobalVariable(member node as SGlobalVariable, "field")
+                }
+                case "enum" => {
+                    visitEnum(member node as SEnum)
+                }
+            }
+        }
+        html dedent()
+        html closeTag("p")
     }
     
     visitFunction : func ~directive(node : SFunction, directive : String) {
         signature := node getSignature(true)
         body : String = ""
         // Get name
-        nameNsuffix := signature substring(0,signature find("(",0))
+        nameNsuffix : String
+        if(signature find("(",0) != -1) {
+            nameNsuffix = signature substring(0,signature find("(",0))
+        } else if(signature find("->",0) != -1) {
+            nameNsuffix = signature substring(0,signature find("->",0))
+        } else {
+            // No arguments, no return type
+            nameNsuffix = signature
+        }
         name := nameNsuffix substring(0,nameNsuffix find("~",0))
         body += html getTag("span","fname",name)
         // Get suffix
@@ -34,7 +73,7 @@ HtmlVisitor : class extends Visitor {
         }
         // Get argument types
         argStr := signature substring(signature find("(",0) + 1, signature find(")",0))
-        if(argStr != null && !argStr empty?()) {
+        if(argStr != null && !argStr empty?() && argStr != signature) {
             body += "( "
             args := argStr split(',')
             for(arg in args) {
@@ -78,7 +117,7 @@ HtmlVisitor : class extends Visitor {
         if(node doc != null && !node doc empty?()) {
             body += HtmlWriter Ln
             html indent()
-            body += html htmlIndent() + html getTag("p","doc",node doc)
+            body += html htmlIndent() + html getTag("span","doc",formatDoc(node doc))
             html dedent()
         }
         // Close function block :) 
@@ -154,6 +193,14 @@ HtmlWriter : class {
     
     writeHtmlLine : func(str : String) {
         writeHtml(str+"\n")
+    }
+    
+    openTag : func(tag, class_ : String) {
+        writeHtmlLine("<%s class=\"%s\">" format(tag,class_))
+    }
+    
+    closeTag : func(tag : String) {
+        writeHtmlLine("</%s>" format(tag))
     }
     
     writeBeginning : func(title : String) {
