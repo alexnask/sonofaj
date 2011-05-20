@@ -229,6 +229,19 @@ HtmlVisitor : class extends Visitor {
     }
     
     visitGlobalVariable : func ~directive(node : SGlobalVariable, directive : String) {
+        type : String
+        ref := node getTypeRef()
+        ref trimLeft()
+        if(ref startsWith?(":")) {
+            dir := ref substring(1,ref findAll(":")[1])
+            refType := ref substring(ref findAll(":")[1]+1)
+            type = html getHtmlType(refType,dir)
+        } else if(ref startsWith?("Func")) {
+            type = html getHtmlType(ref)
+        } else {
+            type = ref
+        }
+        html writeHtmlLine(html getTag("span",directive,"%s -> %s" format(node name, type)))
     }
 }
 
