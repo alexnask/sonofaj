@@ -45,10 +45,7 @@ HtmlVisitor : class extends Visitor {
         // Extends
         if(node extends_ != null && !node extends_ empty?()) {
             html write(HtmlWriter Ln)
-            extRef := node getExtendsRef()
-            dir := extRef substring(extRef findAll(":")[0]+1,extRef findAll(":")[1])
-            type := extRef substring(extRef findAll(":")[1]+1)
-            html writeHtmlLine(html getTag("span","extends","Extends %s" format(html getHtmlType(type,dir))))
+            html writeHtmlLine(html getTag("span","extends","Extends %s" format(html getHtmlType(node getExtendsRef()))))
         }
         // Doc
         if(node doc != null && !node doc empty?()) {
@@ -85,10 +82,7 @@ HtmlVisitor : class extends Visitor {
         // Extends
         if(node extends_ != null && !node extends_ empty?()) {
             html write(HtmlWriter Ln)
-            extRef := node getExtendsRef()
-            dir := extRef substring(extRef findAll(":")[0]+1,extRef findAll(":")[1])
-            type := extRef substring(extRef findAll(":")[1]+1)
-            html writeHtmlLine(html getTag("span","extends","Extends %s" format(html getHtmlType(type,dir))))
+            html writeHtmlLine(html getTag("span","extends","Extends %s" format(html getHtmlType(node getExtendsRef()))))
         }
         // Doc
         if(node doc != null && !node doc empty?()) {
@@ -155,18 +149,8 @@ HtmlVisitor : class extends Visitor {
                         arg = arg substring(arg find(":",0)+1)
                         arg = arg trimLeft()
                     }
-                    // Get the type
-                    if(arg startsWith?(":")) {
-                        dir := arg substring(arg findAll(":")[0]+1,arg findAll(":")[1])
-                        type := arg substring(arg findAll(":")[1]+1,arg length()-1)
-                        body += html getHtmlType(type,dir)
-                    } else if(arg contains?("Func")) {
-                        // Func types
-                        body += html getHtmlType(arg)
-                    } else {
-                        // Maybe it is VarArgs (should fix that to point to lang/VarArgs) or a Func type
-                        body += arg
-                    }
+                    // Get argument type :) 
+                    body += html getHtmlType(arg)
                     if(args indexOf(original) != args getSize() - 1) {
                         body += ", "
                     }
@@ -179,13 +163,7 @@ HtmlVisitor : class extends Visitor {
             returnType := signature substring(signature findAll("->")[signature findAll("->") getSize() - 1]+2)
             returnType = returnType trimLeft()
             retBody := " -> "
-            if(returnType startsWith?(":")) {
-                dir := returnType substring(returnType findAll(":")[0]+1,returnType findAll(":")[1])
-                type := returnType substring(returnType findAll(":")[1]+1)
-                retBody += html getHtmlType(type,dir)
-            } else {
-                retBody += returnType
-            }
+            retBody += html getHtmlType(returnType)
             body += html getTag("span","freturn",retBody)
         }
         // Get doc string
@@ -229,19 +207,7 @@ HtmlVisitor : class extends Visitor {
     }
     
     visitGlobalVariable : func ~directive(node : SGlobalVariable, directive : String) {
-        type : String
-        ref := node getTypeRef()
-        ref trimLeft()
-        if(ref startsWith?(":")) {
-            dir := ref substring(1,ref findAll(":")[1])
-            refType := ref substring(ref findAll(":")[1]+1)
-            type = html getHtmlType(refType,dir)
-        } else if(ref startsWith?("Func")) {
-            type = html getHtmlType(ref)
-        } else {
-            type = ref
-        }
-        html writeHtmlLine(html getTag("span",directive,"%s -> %s" format(node name, type)))
+        html writeHtmlLine(html getTag("span",directive,"%s -> %s" format(node name, html getHtmlType(node getTypeRef()))))
     }
 }
 
@@ -252,9 +218,11 @@ HtmlWriter : class {
     
     init : func(=module,=writer)
     
-    getHtmlType : func(ref : String, directive := "class") -> String {
+    getHtmlType : func(ref : String) -> String {
         pointer := false
         reference := false
+        ref = ref trimRight()
+        ref = ref trimLeft()
         if(ref endsWith?("*")) {
             pointer = true
             ref = ref substring(0,ref length()-1)
@@ -265,27 +233,46 @@ HtmlWriter : class {
         ref = ref trimRight()
         ref = ref trimLeft()
         
-        // Func types :D
-        if(ref startsWith?("Func")) {
-            // Do stuff and return
+        if(ref startsWith?(":") && ref findAll(":") getSize() > 1) {
+            directive := ref substring(ref findAll(":")[0]+1,ref findAll(":")[1])
+            ref = ref substring(ref findAll(":")[1]+1)
+            ref = ref trimRight()
+            ref = ref trimLeft()
+            if(ref startsWith?("`~")) {
+            ref = ref substring(2)
+            }
+            if(ref endsWith?("`")) {
+                ref = ref substring(0,ref length()-1)
+            }
+            
+            ret := "<a class=\"%s\" href=\"" format(directive)
+        
+            modulePath := ref substring(0,ref find(" ",0)) // Get the module path
+            root := modulePath substring(0,modulePath find("/",0)) // Get the root folder of the module
+            thisRoot := module path substring(0,module path find("/",0)) // Get the root of the current module
+            if(root != thisRoot) {
+                ret += "../" times(module path findAll("/") getSize() + 1) + "html/" + modulePath
+            } else {
+                ret += "../" times(module path findAll("/") getSize()) + root + "/" + modulePath substring(modulePath find("/",0)+1)
+            }
+            
+            typeStr := ref substring(ref find(" ",0) + 1)
+            if(pointer) typeStr+="*"
+            if(reference) typeStr+="&"
+            
+            
+            ret += ".html\">%s</a>" format(typeStr)
+            return ret
+        } else if(ref startsWith?("Func")) {
+            // Func types
             ret := "<span class=\"func\">Func"
             if(ref find("(",0) != -1 && ref find(")",0) != -1) {
                 ret += "( "
                 argStr := ref substring(ref find("(",0)+1,ref findAll(")")[ref findAll(")") getSize() - 1])
                 args := argSplit(argStr)
                 for(i in 0..args getSize()) {
-                    arg := args[i] trimLeft()
-                    if(arg startsWith?(":")) {
-                        dir := arg substring(arg findAll(":")[0]+1,arg findAll(":")[1])
-                        type := arg substring(arg findAll(":")[1]+1)
-                        ret += getHtmlType(type,dir)
-                    } else if(arg startsWith?("Func")) {
-                        // Func types
-                        ret += getHtmlType(arg)
-                    } else {
-                        // E.g generic types
-                        ret += arg
-                    }
+                    // Get argument type
+                    ret += getHtmlType(args[i])
                     if(i != args getSize() - 1) {
                         ret += ','
                     }
@@ -306,49 +293,17 @@ HtmlWriter : class {
                 
                 if(retType?) {
                     retType := ref substring(lastIndx + 2)
-                    retType = retType trimLeft()
-                    if(retType startsWith?(":")) {
-                        dir := retType substring(retType findAll(":")[0]+1,retType findAll(":")[1])
-                        type := retType substring(retType findAll(":")[1]+1)
-                        ret += " -> " + getHtmlType(type,dir)
-                    } else if (retType startsWith?("Func")) {
-                        // Func types
-                        ret += " -> " + getHtmlType(retType)
-                    } else {
-                        // E.g. generic types
-                        ret += " -> " + retType
-                    }
+                    // Get return type
+                    ret += " -> " + getHtmlType(retType)
                 }
             }
             ret += "</span>"
             return ret
         }
         
-        if(ref startsWith?("`~")) {
-            ref = ref substring(2)
-        }
-        if(ref endsWith?("`")) {
-            ref = ref substring(0,ref length()-1)
-        }
-        
-        ret := "<a class=\"%s\" href=\"" format(directive)
-        
-        modulePath := ref substring(0,ref find(" ",0)) // Get the module path
-        root := modulePath substring(0,modulePath find("/",0)) // Get the root folder of the module
-        thisRoot := module path substring(0,module path find("/",0)) // Get the root of the current module
-        if(root != thisRoot) {
-            ret += "../" times(module path findAll("/") getSize() + 1) + "html/" + modulePath
-        } else {
-            ret += "../" times(module path findAll("/") getSize()) + root + "/" + modulePath substring(modulePath find("/",0)+1)
-        }
-        
-        typeStr := ref substring(ref find(" ",0) + 1)
-        if(pointer) typeStr+="*"
-        if(reference) typeStr+="&"
-        
-        
-        ret += ".html\">%s</a>" format(typeStr)
-        ret
+        if(pointer) ref+="*"
+        if(reference) ref+="&"
+        ref
     }
     
     writeModuleLine : func(path : String) {
