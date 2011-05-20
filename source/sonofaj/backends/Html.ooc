@@ -40,7 +40,7 @@ HtmlVisitor : class extends Visitor {
         // From
         if(node from_ != null && !node from_ empty?()) {
             html write(HtmlWriter Ln)
-            html writeHtmlLine(html getTag("span","from","From %s" format(node from_)))
+            html writeHtmlLine(html getTag("span","from","From <span class=\"ctype\">%s</span>" format(node from_)))
         }
         // Extends
         if(node extends_ != null && !node extends_ empty?()) {
@@ -58,7 +58,10 @@ HtmlVisitor : class extends Visitor {
             html write(HtmlWriter Ln)
             match (member node type) {
                 case "method" => {
-                    visitFunction(member node as SFunction, "method")
+                    if(member node as SFunction hasModifier("static"))
+                        visitFunction(member node as SFunction, "staticmethod")
+                    else
+                        visitFunction(member node as SFunction, "method")
                 }
                 case "field" => {
                     visitGlobalVariable(member node as SGlobalVariable, "field")
