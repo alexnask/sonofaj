@@ -81,7 +81,7 @@ HtmlVisitor : class extends Visitor {
         if(signature find("(",0) != -1) {
             nameNsuffix = signature substring(0,signature find("(",0))
         } else if(signature find("->",0) != -1) {
-            nameNsuffix = signature substring(0,signature find("->",0))
+            nameNsuffix = signature substring(0,signature findAll("->")[0])
         } else {
             // No arguments, no return type
             nameNsuffix = signature
@@ -106,9 +106,10 @@ HtmlVisitor : class extends Visitor {
                         // It has a name :)
                         body += html getTag("span","argname",arg substring(0,arg find(":",0)+2))
                         arg = arg substring(arg find(":",0)+1)
+                        arg = arg trimLeft()
                     }
                     // Get the type
-                    if(arg findAll(":") getSize() >= 2) {
+                    if(arg startsWith?(":")) {
                         dir := arg substring(arg findAll(":")[0]+1,arg findAll(":")[1])
                         type := arg substring(arg findAll(":")[1]+1,arg length()-1)
                         body += html getHtmlType(type,dir)
@@ -128,7 +129,7 @@ HtmlVisitor : class extends Visitor {
         }
         // Get return type
         if(signature find("->",0) != -1) {
-            returnType := signature substring(signature find("->",0)+2)
+            returnType := signature substring(signature findAll("->")[signature findAll("->") getSize() - 1]+2)
             returnType = returnType trimLeft()
             retBody := " -> "
             if(returnType startsWith?(":")) {
