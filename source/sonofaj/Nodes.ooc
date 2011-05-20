@@ -8,6 +8,13 @@ import yajl/Yajl
 import sonofaj/[Repository, Tag]
 
 
+// TODO:Interfaces
+// TODO:Named imports
+// TODO:Generic classes must also show the generic types (e.g. ArrayList<Int> not only ArrayList)
+// TODO:Fix bug ( see structs/HashMap -> getStandardEquals )
+// TODO:Fix bug ( see os/Process -> setEnv )
+
+
 readStringList: func (list: ValueList) -> ArrayList<String> {
     ret := ArrayList<String> new()
     for(value: Value<Pointer> in list) {
@@ -49,6 +56,18 @@ SNode: abstract class {
         tag := Tag parse(type)
         while(true) {
             if(tag hasArguments() && tag value != "Func") {
+                if(tag value == "multi") {
+                    // Tuple
+                    ret := "("
+                    for(arg in tag arguments) {
+                        ret += formatTypeRef(arg value)
+                        if(tag arguments indexOf(arg) != tag arguments getSize() - 1) {
+                            ret += ','
+                        }
+                    }
+                    ret += ")"
+                    return ret
+                }
                 tag = tag arguments get(0)
             } else if(!tag hasArguments()) {
                 // get the type identifier
@@ -68,6 +87,16 @@ SNode: abstract class {
                         ret += ")"
                     } else if(targ value == "return") {
                         ret += "->" + formatTypeRef(targ arguments[0] value)
+                    } else if(targ value == "multi") {
+                        // Tuple return type
+                        ret += "->("
+                        for(arg in targ arguments) {
+                            ret += formatTypeRef(arg value)
+                            if(targ arguments indexOf(arg) != targ arguments getSize() - 1) {
+                                ret += ','
+                            }
+                        }
+                        ret += ")"
                     }
                 }
                 return ret
@@ -184,41 +213,6 @@ SType: abstract class extends SNode {
     }
 }
 
-SGenericType: class extends SType {
-    init: func (=repo,=parent,=module)
-    read : func(ptr : Value<Pointer>)
-    
-    getRef: func -> String {
-        name
-    }
-}
-
-SFuncType: class extends SType {
-    init: func ~rhabarberbarbarabarbarbarenbarbierbierbar (=repo, =parent, =module) {
-        type = "!func"
-        name = "Func"
-    }
-
-    getRef: func -> String {
-        name
-    }
-
-    read: func (value: Value<Pointer>)
-}
-
-SVarArgsType: class extends SType {
-    // Thank you fred for inspiring me that name from the ones you use =D
-    init : func ~bubaaaaaaaaaaaaaaaaaaaaaaaaaaaaa (=repo, =parent, =module) {
-        type = "VarArgs"
-        name = "..."
-    }
-    
-    getRef : func -> String {
-        name
-    }
-    
-    read: func (value : Value<Pointer>)
-}
 
 SArgument: class {
     name, type: String
@@ -653,6 +647,17 @@ SEnum : class extends SType {
     }
 }
 
+
+SAnyType : class extends SType {
+    init : func (=repo, =parent, =module)
+    
+    getRef : func -> String {
+        name
+    }
+    
+    read: func (value : Value<Pointer>)
+}
+
 SModule: class extends SNode {
     children := HashMap<String, SNode> new()
     imports := ArrayList<String> new()
@@ -739,13 +744,21 @@ SModule: class extends SNode {
             name = name substring(0, name indexOf('<'))
         // All func types start with Func
         if(name startsWith?("Func")) {
-            f := SFuncType new(repo, parent, this)
+            f := SAnyType new(repo, parent, this)
             f name = name
             return f
         }
+        // Check for tuples
+        if(name startsWith?("(") && name endsWith?(")")) {
+            t := SAnyType new(repo, parent, this)
+            t name = name
+            return t
+        }
         // VarArgs
         if(name == "..." || name == "VarArgs") {
-            return SVarArgsType new(repo, parent, this)
+            v := SAnyType new(repo, parent, this)
+            v name = name
+            return v
         }
         /* TODO: do that with exceptions. */
         for(node in children) {
@@ -755,9 +768,9 @@ SModule: class extends SNode {
                 if(node as SClass genericTypes contains?(name)) {
                     // Class generics
                     // TODO: Improve this :/
-                    // The usage of SGenericType here avoids certain bugs where the class that contained the type was returned
+                    // The usage of SAnyType here avoids certain bugs where the class that contained the type was returned
                     // and not the type itself
-                    t := SGenericType new(repo, parent, this)
+                    t := SAnyType new(repo, parent, this)
                     t name = name
                     return t
                 }

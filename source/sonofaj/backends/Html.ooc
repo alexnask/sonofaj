@@ -123,7 +123,15 @@ HtmlVisitor : class extends Visitor {
         // Get name
         nameNsuffix : String
         if(signature find("(",0) != -1) {
-            nameNsuffix = signature substring(0,signature find("(",0))
+            if(signature find("->",0) != -1) {
+                if(signature findAll("->")[signature findAll("->") getSize() - 1] < signature find("(",0)) {
+                    nameNsuffix = signature substring(0,signature findAll("->")[0])
+                } else {
+                    nameNsuffix = signature substring(0,signature find("(",0))
+                }
+            } else {
+                nameNsuffix = signature substring(0,signature find("(",0))
+            }
         } else if(signature find("->",0) != -1) {
             nameNsuffix = signature substring(0,signature findAll("->")[0])
         } else {
@@ -138,7 +146,7 @@ HtmlVisitor : class extends Visitor {
             body += html getTag("span","fsuffix"," " + suffix)
         }
         // Get argument types
-        if(signature find("(",0) != -1 && signature find(")",0) != -1) {
+        if(signature find("(",0) != -1 && signature find(")",0) != -1 && signature find("(",0) < signature find("->",0) && signature find(")",0) < signature find("->",0)) {
             argStr := signature substring(signature find("(",0) + 1, signature findAll(")")[signature findAll(")") getSize() - 1])
             if(argStr != null && !argStr empty?() && argStr != signature) {
                 body += "( "
@@ -301,6 +309,19 @@ HtmlWriter : class {
                 }
             }
             ret += "</span>"
+            return ret
+        } else if(ref startsWith?("(") && ref endsWith?(")")) {
+            // Tuple
+            ret := "("
+            ref = ref substring(1,ref length() - 1)
+            types := argSplit(ref)
+            for(type in types) {
+                ret += getHtmlType(type)
+                if(types indexOf(type) != types getSize() - 1) {
+                    ret += ','
+                }
+            }
+            ret += ")"
             return ret
         }
         
