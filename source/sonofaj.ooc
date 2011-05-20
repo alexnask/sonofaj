@@ -6,7 +6,7 @@ import structs/[HashBag, Bag, ArrayList]
 import optparse/[Parser, Option]
 
 import sonofaj/[Nodes, Repository]
-import sonofaj/backends/SphinxRST
+import sonofaj/backends/[SphinxRST,Html]
 
 setupParser: func -> Parser {
     parser := Parser new()
@@ -54,8 +54,13 @@ main: func (args: ArrayList<String>) {
                 backend run()
                 "Done." println()
             }
+            case "html" => {
+                backend := HtmlBackend new(repo)
+                backend run()
+                "Done." println()
+            }
             case => {
-                parser error("Available backends: sphinx")
+                parser error("Available backends: sphinx, html")
             }
         }
     }
