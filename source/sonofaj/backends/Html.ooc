@@ -13,6 +13,13 @@ HtmlVisitor : class extends Visitor {
         visitFunction(node,"func")
     }
     
+    visitClass : func(node : SClass) {
+        identifier := node getIdentifier()
+        //html getTag("p","class",body)
+        body := html getTag("span","cname","Class %s" format(html getHtmlType(identifier)))
+        
+    }
+    
     visitFunction : func ~directive(node : SFunction, directive : String) {
         signature := node getSignature(true)
         body : String = ""
@@ -31,7 +38,9 @@ HtmlVisitor : class extends Visitor {
             body += "( "
             args := argStr split(',')
             for(arg in args) {
-                if(!arg startsWith?(":") && !arg startsWith?(" ")) {
+                original := arg
+                arg = arg trimLeft()
+                if(!arg startsWith?(":")) {
                     // It has a name :)
                     body += html getTag("span","argname",arg substring(0,arg find(":",0)+2))
                     arg = arg substring(arg find(":",0)+1)
@@ -45,7 +54,7 @@ HtmlVisitor : class extends Visitor {
                     // Maybe it is VarArgs (should fix that to point to lang/VarArgs) or a Func type
                     body += arg
                 }
-                if(args indexOf(arg) != args getSize() - 1) {
+                if(args indexOf(original) != args getSize() - 1) {
                     body += ", "
                 }
             }
@@ -68,14 +77,13 @@ HtmlVisitor : class extends Visitor {
         // Get doc string
         if(node doc != null && !node doc empty?()) {
             body += HtmlWriter Ln
-            body += html getTag("p","doc",node doc)
+            html indent()
+            body += html htmlIndent() + html getTag("p","doc",node doc)
+            html dedent()
         }
         // Close function block :) 
         body += HtmlWriter Ln
         html writeHtmlLine(html getTag("span",directive,body))
-    }
-    
-    visitClass : func(node : SClass) {
     }
     
     visitCover : func(node : SCover) {
@@ -157,8 +165,11 @@ HtmlWriter : class {
     }
     
     writeHtml : func(str : String) {
-        htmlIndents := indentLevel - 2
-        writeNoIndent("&nbsp;" times(4*htmlIndents) + str)
+        writeNoIndent(htmlIndent() + str)
+    }
+    
+    htmlIndent : func -> String {
+        return "&nbsp;" times(4*(indentLevel-2))
     }
     
     getTag : func(tagName, class_, contents : String) -> String {
