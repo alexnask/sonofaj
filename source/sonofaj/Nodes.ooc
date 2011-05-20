@@ -81,11 +81,11 @@ SNode: abstract class {
         suffixes := ""
         while(true) {
             if(tag hasArguments()) {
-                suffixes = suffixes append(match (tag value) {
-                    case "pointer" => '*'
-                    case "reference" => '@'
-                    case => '?' /* TODO */
-                })
+                if(tag value == "pointer") {
+                    suffixes = suffixes append('*')
+                } else if(tag value == "reference") {
+                    suffixes = suffixes append('@')
+                }
                 tag = tag arguments get(0)
             } else {
                 // get the type identifier

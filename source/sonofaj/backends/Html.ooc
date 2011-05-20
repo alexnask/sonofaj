@@ -5,6 +5,24 @@ import structs/[ArrayList,HashMap]
 import sonofaj/[Doc, Nodes, Repository, Visitor]
 import sonofaj/backends/Backend
 
+argSplit : func (argStr : String) -> ArrayList<String> {
+    // Splits an argument string correctly, that is, taking in mind that Func's can contain strings
+    args := argStr split(',')
+    for(i in 0..args getSize()) {
+        args[i] = args[i] trimLeft()
+        if(args[i] contains?("Func") && args[i] find("(",0) != -1 && args[i] find(")",0) == -1) {
+            for(j in i+1..args getSize()) {
+                args[i] = args[i] + ',' + args[j]
+                args removeAt(j)
+                if(args[i] find(")",0) != -1) {
+                    break
+                }
+            }
+        }
+    }
+    args
+}
+
 HtmlVisitor : class extends Visitor {
     html : HtmlWriter
     init : func(=html)
@@ -76,32 +94,37 @@ HtmlVisitor : class extends Visitor {
             body += html getTag("span","fsuffix",suffix)
         }
         // Get argument types
-        argStr := signature substring(signature find("(",0) + 1, signature find(")",0))
-        if(argStr != null && !argStr empty?() && argStr != signature) {
-            body += "( "
-            args := argStr split(',')
-            for(arg in args) {
-                original := arg
-                arg = arg trimLeft()
-                if(!arg startsWith?(":")) {
-                    // It has a name :)
-                    body += html getTag("span","argname",arg substring(0,arg find(":",0)+2))
-                    arg = arg substring(arg find(":",0)+1)
+        if(signature find("(",0) != -1 && signature find(")",0) != -1) {
+            argStr := signature substring(signature find("(",0) + 1, signature findAll(")")[signature findAll(")") getSize() - 1])
+            if(argStr != null && !argStr empty?() && argStr != signature) {
+                body += "( "
+                args := argSplit(argStr)
+                for(arg in args) {
+                    original := arg
+                    arg = arg trimLeft()
+                    if(!arg startsWith?(":")) {
+                        // It has a name :)
+                        body += html getTag("span","argname",arg substring(0,arg find(":",0)+2))
+                        arg = arg substring(arg find(":",0)+1)
+                    }
+                    // Get the type
+                    if(arg findAll(":") getSize() >= 2) {
+                        dir := arg substring(arg findAll(":")[0]+1,arg findAll(":")[1])
+                        type := arg substring(arg findAll(":")[1]+1,arg length()-1)
+                        body += html getHtmlType(type,dir)
+                    } else if(arg contains?("Func")) {
+                        // Func types
+                        body += html getHtmlType(arg)
+                    } else {
+                        // Maybe it is VarArgs (should fix that to point to lang/VarArgs) or a Func type
+                        body += arg
+                    }
+                    if(args indexOf(original) != args getSize() - 1) {
+                        body += ", "
+                    }
                 }
-                // Get the type
-                if(arg findAll(":") getSize() >= 2) {
-                    dir := arg substring(arg findAll(":")[0]+1,arg findAll(":")[1])
-                    type := arg substring(arg findAll(":")[1]+1,arg length()-1)
-                    body += html getHtmlType(type,dir)
-                } else {
-                    // Maybe it is VarArgs (should fix that to point to lang/VarArgs) or a Func type
-                    body += arg
-                }
-                if(args indexOf(original) != args getSize() - 1) {
-                    body += ", "
-                }
+                body += " )"
             }
-            body += " )"
         }
         // Get return type
         if(signature find("->",0) != -1) {
@@ -150,6 +173,7 @@ HtmlWriter : class {
     init : func(=module,=writer)
     
     getHtmlType : func(ref : String, directive := "class") -> String {
+        // VarArgs
         ref = ref trimRight()
         ref = ref trimLeft()
         pointer := false
@@ -160,6 +184,65 @@ HtmlWriter : class {
         } else if(ref endsWith?("&")) {
             reference = true
             ref = ref substring(0,ref length()-1)
+        }
+        
+        // Func types :D
+        if(ref startsWith?("Func")) {
+            // Do stuff and return
+            ret := "<span class=\"func\">Func"
+            if(ref find("(",0) != -1 && ref find(")",0) != -1) {
+                ret += "( "
+                argStr := ref substring(ref find("(",0)+1,ref findAll(")")[ref findAll(")") getSize() - 1])
+                args := argSplit(argStr)
+                for(i in 0..args getSize()) {
+                    arg := args[i] trimLeft()
+                    if(arg startsWith?(":")) {
+                        dir := arg substring(arg findAll(":")[0]+1,arg findAll(":")[1])
+                        type := arg substring(arg findAll(":")[1]+1)
+                        ret += getHtmlType(type,dir)
+                    } else if(arg startsWith?("Func")) {
+                        // Func types
+                        ret += getHtmlType(arg)
+                    } else {
+                        // E.g generic types
+                        ret += arg
+                    }
+                    if(i != args getSize() - 1) {
+                        ret += ','
+                    }
+                }
+                ret += " )"
+            }
+            if(ref find("->",0) != -1) {
+                lastIndx := ref findAll("->")[ref findAll("->") getSize() - 1]
+                retType? := false
+                if(ref find(")",0) != -1) {
+                    if(lastIndx > ref findAll(")")[ref findAll(")") getSize() - 1]) { // This is too make sure that if we have a Func argument we dont take its arrow and not the one of the top-most Func
+                        //TODO: Make sure we dont take the arrow of a Func that is a return type of the top-most Func
+                        retType? = true
+                    }
+                } else {
+                    retType? = true
+                }
+                
+                if(retType?) {
+                    retType := ref substring(lastIndx + 2)
+                    retType = retType trimLeft()
+                    if(retType startsWith?(":")) {
+                        dir := retType substring(retType findAll(":")[0]+1,retType findAll(":")[1])
+                        type := retType substring(retType findAll(":")[1]+1)
+                        ret += " -> " + getHtmlType(type,dir)
+                    } else if (retType startsWith?("Func")) {
+                        // Func types
+                        ret += " -> " + getHtmlType(retType)
+                    } else {
+                        // E.g. generic types
+                        ret += " -> " + retType
+                    }
+                }
+            }
+            ret += "</span>"
+            return ret
         }
         
         if(ref startsWith?("`~")) {
