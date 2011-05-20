@@ -16,7 +16,7 @@ HtmlVisitor : class extends Visitor {
     visitClass : func(node : SClass) {
         identifier := node getIdentifier()
         html openTag("p","class")
-        html writeHtmlLine(html getTag("span","cname","Class %s" format(html getHtmlType(identifier))))
+        html writeHtmlLine(html getTag("span","cname","Class %s" format(identifier)))
         // Indent for members
         html indent()
         // Extends
@@ -30,7 +30,8 @@ HtmlVisitor : class extends Visitor {
         // Doc
         if(node doc != null && !node doc empty?()) {
             html write(HtmlWriter Ln)
-            html writeHtmlLine(html getTag("span","doc",formatDoc(node doc)))
+            node doc = formatDoc(node doc)
+            html writeHtmlLine(html getTag("span","doc",html formatDoc(node doc)))
         }
         // Get members
         for(member in node members) {
@@ -119,9 +120,8 @@ HtmlVisitor : class extends Visitor {
         // Get doc string
         if(node doc != null && !node doc empty?()) {
             body += HtmlWriter Ln
-            html indent()
-            body += html htmlIndent() + html getTag("span","doc",formatDoc(node doc))
-            html dedent()
+            node doc = formatDoc(node doc)
+            body += html htmlIndentOpen() + html getTag("span","doc",html formatDoc(node doc)) + html htmlIndentClose()
         }
         // Close function block :) 
         body += HtmlWriter Ln
@@ -218,18 +218,22 @@ HtmlWriter : class {
     }
     
     writeHtml : func(str : String) {
-        writeNoIndent(htmlIndent() + str)
+        writeNoIndent(htmlIndentOpen() + str + htmlIndentClose())
     }
     
-    htmlIndent : func -> String {
-        return "&nbsp;" times(4*(indentLevel-2))
+    htmlIndentOpen : func -> String {
+        return "<pre>" + "    " times(indentLevel-2)
+    }
+    
+    htmlIndentClose : func -> String {
+        return "</pre>"
     }
     
     getTag : func(tagName, class_, contents : String) -> String {
         return "<%s class=\"%s\">" format(tagName,class_) + contents + "</%s>" format(tagName)
     }
     
-    Ln := static "\n<br/>\n<br/>\n"
+    Ln := static "\n\n"
     
     writeNoIndent : func(str : String) {
         writer write(str)
@@ -245,6 +249,15 @@ HtmlWriter : class {
     
     write : func(str : String) {
         writer write("    " times(indentLevel) + str)
+    }
+    
+    formatDoc : func(doc : String) -> String {
+        lines := doc split('\n')
+        for(i in 0 .. lines getSize()) {
+            lines[i] = lines[i] trimLeft()
+            lines[i] = "    " times(indentLevel - 2) + lines[i]
+        }
+        lines join('\n')
     }
     
     close : func {
