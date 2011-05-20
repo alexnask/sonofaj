@@ -299,6 +299,7 @@ SFunction: class extends SNode {
         entity := value value as ValueMap
         // name
         name = entity["name", String]
+        name = name replaceAll("__quest","?")
         // modifiers
         modifiers = readStringList(entity["modifiers", ValueList])
         // genericTypes
@@ -388,6 +389,7 @@ SGlobalVariable: class extends SNode {
         entity := value value as ValueMap
         // name
         name = entity["name", String]
+        name = name replaceAll("__quest","?")
         // modifiers
         modifiers = readStringList(entity["modifiers", ValueList])
         // value
@@ -493,6 +495,7 @@ SClass: class extends SType {
         entity := value value as ValueMap
         // name
         name = entity["name", String]
+        name = name replaceAll("__quest","?")
         // genericTypes
         genericTypes = readStringList(entity["genericTypes", ValueList])
         // extends
@@ -559,6 +562,7 @@ SCover: class extends SType {
         entity := value value as ValueMap
         // name
         name = entity["name", String]
+        name = name replaceAll("__quest","?")
         // fullName
         fullName = entity["fullName", String]
         // extends
@@ -605,6 +609,7 @@ SEnum : class extends SType {
         entity := value value as ValueMap
         // name
         name = entity["name", String]
+        name = name replaceAll("__quest","?")
         // extern
         extern_ = entity["extern", Bool]
         // doc
