@@ -31,10 +31,55 @@ HtmlVisitor : class extends Visitor {
         visitFunction(node,"func")
     }
     
+    visitCover : func(node : SCover) {
+        identifier := node getIdentifier()
+        html openTag("p","cover")
+        html writeHtmlLine(html getTag("span","covername","Cover %s" format(identifier)))
+        // Indent for members
+        html indent()
+        // From
+        if(node from_ != null && !node from_ empty?()) {
+            html write(HtmlWriter Ln)
+            html writeHtmlLine(html getTag("span","from","From %s" format(node from_)))
+        }
+        // Extends
+        if(node extends_ != null && !node extends_ empty?()) {
+            html write(HtmlWriter Ln)
+            extRef := node getExtendsRef()
+            dir := extRef substring(extRef findAll(":")[0]+1,extRef findAll(":")[1])
+            type := extRef substring(extRef findAll(":")[1]+1)
+            html writeHtmlLine(html getTag("span","extends","Extends %s" format(html getHtmlType(type,dir))))
+        }
+        // Doc
+        if(node doc != null && !node doc empty?()) {
+            html write(HtmlWriter Ln)
+            node doc = formatDoc(node doc)
+            html writeHtmlLine(html getTag("span","doc",html formatDoc(node doc)))
+        }
+        // Get members
+        for(member in node members) {
+            html write(HtmlWriter Ln)
+            match (member node type) {
+                case "method" => {
+                    visitFunction(member node as SFunction, "method")
+                }
+                case "field" => {
+                    visitGlobalVariable(member node as SGlobalVariable, "field")
+                }
+                case "enum" => {
+                    visitEnum(member node as SEnum)
+                }
+            }
+        }
+        html dedent()
+        html closeTag("p")
+    }
+    
+    //TODO: Add private section for __load__ and __defaults__ (or maybe all members starting and ending with __ ? )
     visitClass : func(node : SClass) {
         identifier := node getIdentifier()
         html openTag("p","class")
-        html writeHtmlLine(html getTag("span","cname","Class %s" format(identifier)))
+        html writeHtmlLine(html getTag("span","classname","Class %s" format(identifier)))
         // Indent for members
         html indent()
         // Extends
@@ -56,7 +101,9 @@ HtmlVisitor : class extends Visitor {
             html write(HtmlWriter Ln)
             match (member node type) {
                 case "method" => {
-                    if(member node as SFunction hasModifier("static"))
+                    if(member node name startsWith?("__") && member node name endsWith?("__"))
+                        visitFunction(member node as SFunction, "privatemethod")
+                    else if(member node as SFunction hasModifier("static"))
                         visitFunction(member node as SFunction, "staticmethod")
                     else
                         visitFunction(member node as SFunction, "method")
@@ -150,9 +197,6 @@ HtmlVisitor : class extends Visitor {
         // Close function block :) 
         body += HtmlWriter Ln
         html writeHtmlLine(html getTag("span",directive,body))
-    }
-    
-    visitCover : func(node : SCover) {
     }
     
     visitEnum : func(node : SEnum) {
