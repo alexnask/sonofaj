@@ -613,7 +613,6 @@ SCover: class extends SType {
 }
 
 // TODO: Add Interfaces
-// TODO: Add enums
 SEnumElement : class {
     name : String
     doc : String

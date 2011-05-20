@@ -34,7 +34,7 @@ HtmlVisitor : class extends Visitor {
     visitCover : func(node : SCover) {
         identifier := node getIdentifier()
         html openTag("p","cover")
-        html writeHtmlLine(html getTag("span","covername","Cover %s" format(identifier)))
+        html writeHtmlLine(html getTag("span","coverdecl","Cover <span class=\"covername\">%s</span>" format(identifier)))
         // Indent for members
         html indent()
         // From
@@ -79,7 +79,7 @@ HtmlVisitor : class extends Visitor {
     visitClass : func(node : SClass) {
         identifier := node getIdentifier()
         html openTag("p","class")
-        html writeHtmlLine(html getTag("span","classname","Class %s" format(identifier)))
+        html writeHtmlLine(html getTag("span","classdecl","Class <span class=\"classname\">%s</span>" format(identifier)))
         // Indent for members
         html indent()
         // Extends
@@ -200,6 +200,28 @@ HtmlVisitor : class extends Visitor {
     }
     
     visitEnum : func(node : SEnum) {
+        identifier := node getIdentifier()
+        html openTag("p","cover")
+        html writeHtmlLine(html getTag("span","enumdecl","Enum <span class=\"enumname\">%s</span>" format(identifier)))
+        // Indent for members
+        html indent()
+        // Doc
+        if(node doc != null && !node doc empty?()) {
+            html write(HtmlWriter Ln)
+            node doc = formatDoc(node doc)
+            html writeHtmlLine(html getTag("span","doc",html formatDoc(node doc)))
+        }
+        // Get members
+        for(member in node members) {
+            html writeHtmlLine(html getTag("span","enumelement",member name))
+            if(member doc != null && !member doc empty?()) {
+                html indent()
+                html writeHtmlLine(html getTag("span","doc",member doc))
+                html dedent()
+            }
+        }
+        html dedent()
+        html closeTag("p")
     }
     
     visitGlobalVariable : func(node : SGlobalVariable) {
@@ -218,9 +240,6 @@ HtmlWriter : class {
     init : func(=module,=writer)
     
     getHtmlType : func(ref : String, directive := "class") -> String {
-        // VarArgs
-        ref = ref trimRight()
-        ref = ref trimLeft()
         pointer := false
         reference := false
         if(ref endsWith?("*")) {
@@ -230,6 +249,8 @@ HtmlWriter : class {
             reference = true
             ref = ref substring(0,ref length()-1)
         }
+        ref = ref trimRight()
+        ref = ref trimLeft()
         
         // Func types :D
         if(ref startsWith?("Func")) {
@@ -338,7 +359,7 @@ HtmlWriter : class {
     }
     
     writeBeginning : func(title : String) {
-        style := "../" times(module path findAll("/") getSize() + 1) + "style.css"
+        style := "../" times(module path findAll("/") getSize() + 1) +  "html/style.css"
         this writeLine("<html>"). indent(). writeLine("<head><title>%s</title><link rel=\"StyleSheet\" href=\"%s\" TYPE=\"text/css\" media=\"screen\" /></head>" format(module name, style)). writeLine("<body>"). indent(). writeLine("<div id=\"body\">"). indent()
     }
     
