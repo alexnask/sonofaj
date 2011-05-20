@@ -22,7 +22,10 @@ HtmlVisitor : class extends Visitor {
         // Extends
         if(node extends_ != null && !node extends_ empty?()) {
             html write(HtmlWriter Ln)
-            html writeHtmlLine(html getTag("span","extends","Extends %s" format(html getHtmlType(node getExtendsRef()))))
+            extRef := node getExtendsRef()
+            dir := extRef substring(extRef findAll(":")[0]+1,extRef findAll(":")[1])
+            type := extRef substring(extRef findAll(":")[1]+1)
+            html writeHtmlLine(html getTag("span","extends","Extends %s" format(html getHtmlType(type,dir))))
         }
         // Doc
         if(node doc != null && !node doc empty?()) {
@@ -159,8 +162,11 @@ HtmlWriter : class {
             ref = ref substring(0,ref length()-1)
         }
         
-        if(ref startsWith?("`~") && ref endsWith?("`")) {
-            ref = ref substring(2,ref length()-1)
+        if(ref startsWith?("`~")) {
+            ref = ref substring(2)
+        }
+        if(ref endsWith?("`")) {
+            ref = ref substring(0,ref length()-1)
         }
         
         ret := "<a class=\"%s\" href=\"" format(directive)
