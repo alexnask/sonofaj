@@ -9,7 +9,7 @@ ParsingError: class extends Exception {
 Tag: class {
     value: String
     arguments: ArrayList<Tag>
-
+    
     init: func (=value) {
         init(value, null)    
     }
@@ -22,7 +22,7 @@ Tag: class {
         arguments != null
     }
 
-    parse: static func (iter: Iterator<Char>, lastChar: Char*) -> Tag {
+    parse: static func (iter: Iterator<Char>, lastChar: Char*, toplevel := true) -> Tag {
         buf := Buffer new()
         tag: Tag
         /* first: skip whitespaces and commas. */
@@ -45,11 +45,17 @@ Tag: class {
             tag arguments = ArrayList<Tag> new()
             while(true) {
                 thisLastChar: Char
-                tag arguments add(parse(iter, thisLastChar&))
+                tag arguments add(parse(iter, thisLastChar&, false))
                 lastChar@ = thisLastChar
                 /* no more arguments. */
                 if(thisLastChar == ')') {
-                    break
+                    next = iter next()
+                    iter as ReverseIterator<Char> prev()
+                    if(next == ',' && toplevel) {
+                        continue
+                    } else {
+                        break
+                    }
                 } else if(thisLastChar == ',') {
                     continue
                 } else {

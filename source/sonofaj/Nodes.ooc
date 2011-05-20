@@ -48,11 +48,29 @@ SNode: abstract class {
     getBaseType: func (type: String) -> String {
         tag := Tag parse(type)
         while(true) {
-            if(tag hasArguments()) {
+            if(tag hasArguments() && tag value != "Func") {
                 tag = tag arguments get(0)
-            } else {
+            } else if(!tag hasArguments()) {
                 // get the type identifier
                 return getTypeIdentifier(tag value)
+            } else {
+                // Func types
+                ret := "Func"
+                for(targ in tag arguments) {
+                    if(targ value == "arguments") {
+                        ret += "("
+                        for(arg in targ arguments) {
+                            ret += formatTypeRef(arg value)
+                            if(targ arguments indexOf(arg) != targ arguments getSize() - 1) {
+                                ret += ','
+                            }
+                        }
+                        ret += ")"
+                    } else if(targ value == "return") {
+                        ret += "->" + formatTypeRef(targ arguments[0] value)
+                    }
+                }
+                return ret
             }
         }
         ""
@@ -166,6 +184,15 @@ SType: abstract class extends SNode {
     }
 }
 
+SGenericType: class extends SType {
+    init: func (=repo,=parent,=module)
+    read : func(ptr : Value<Pointer>)
+    
+    getRef: func -> String {
+        name
+    }
+}
+
 SFuncType: class extends SType {
     init: func ~rhabarberbarbarabarbarbarenbarbierbierbar (=repo, =parent, =module) {
         type = "!func"
@@ -269,7 +296,7 @@ SFunction: class extends SNode {
                 if(!arg name empty?())
                     buf append(": ")
                 if(arg name endsWith?("_generic") || genericTypes contains?(arg type)) {
-                    // Quick and dirty way, but in json genericTypes not alway full
+                    // The _generic thingy is a quick and dirty way that works for some functions, because in json genericTypes not alway full
                     buf append(arg type)
                 } else if(ref) {
                     buf append(formatTypeRef(arg type))
@@ -729,7 +756,11 @@ SModule: class extends SNode {
                 if(node as SClass genericTypes contains?(name)) {
                     // Class generics
                     // TODO: Improve this :/
-                    return node
+                    // The usage of SGenericType here avoids certain bugs where the class that contained the type was returned
+                    // and not the type itself
+                    t := SGenericType new(repo, parent, this)
+                    t name = name
+                    return t
                 }
             }
         }
