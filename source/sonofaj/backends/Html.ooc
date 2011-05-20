@@ -138,7 +138,7 @@ HtmlVisitor : class extends Visitor {
         // Get suffix
         if(name != nameNsuffix) {
             suffix := nameNsuffix substring(nameNsuffix find("~",0))
-            body += html getTag("span","fsuffix",suffix)
+            body += html getTag("span","fsuffix"," " + suffix)
         }
         // Get argument types
         if(signature find("(",0) != -1 && signature find(")",0) != -1) {
@@ -338,7 +338,8 @@ HtmlWriter : class {
     }
     
     writeBeginning : func(title : String) {
-        this writeLine("<html>"). indent(). writeLine("<head><title>"+title+"</title></head>"). writeLine("<body>"). indent(). writeLine("<div id=\"body\">"). indent()
+        style := "../" times(module path findAll("/") getSize() + 1) + "style.css"
+        this writeLine("<html>"). indent(). writeLine("<head><title>%s</title><link rel=\"StyleSheet\" href=\"%s\" TYPE=\"text/css\" media=\"screen\" /></head>" format(module name, style)). writeLine("<body>"). indent(). writeLine("<div id=\"body\">"). indent()
     }
     
     writeEnd : func {
