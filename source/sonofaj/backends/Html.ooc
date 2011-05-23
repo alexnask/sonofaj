@@ -18,6 +18,14 @@ argSplit : func (argStr : String) -> ArrayList<String> {
                     break
                 }
             }
+        } else if(args[i] contains?("<") && !args[i] contains?(">")) {
+            for(j in i+1..args getSize()) {
+                args[i] = args[i] + ',' + args[j]
+                args removeAt(j)
+                if(args[i] contains?(">")) {
+                    break
+                }
+            }
         }
     }
     args
@@ -146,7 +154,8 @@ HtmlVisitor : class extends Visitor {
             body += html getTag("span","fsuffix"," " + suffix)
         }
         // Get argument types
-        if(signature find("(",0) != -1 && signature find(")",0) != -1 && signature find("(",0) < signature find("->",0) && signature find(")",0) < signature find("->",0)) {
+        arrowPos := (signature contains?("->")) ? signature find("->",0) : signature length() + 1 // Fix for function with no return type
+        if(signature find("(",0) != -1 && signature find(")",0) != -1 && signature find("(",0) < arrowPos && signature find(")",0) < arrowPos) {
             argStr := signature substring(signature find("(",0) + 1, signature findAll(")")[signature findAll(")") getSize() - 1])
             if(argStr != null && !argStr empty?() && argStr != signature) {
                 body += "( "
@@ -181,7 +190,7 @@ HtmlVisitor : class extends Visitor {
         if(node doc != null && !node doc empty?()) {
             body += HtmlWriter Ln
             node doc = formatDoc(node doc)
-            body += html htmlIndentOpen() + html getTag("span","doc",html formatDoc(node doc)) + html htmlIndentClose()
+            body += html getTag("span","doc",html formatDoc(node doc))
         }
         // Close function block :) 
         body += HtmlWriter Ln
