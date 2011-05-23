@@ -31,6 +31,23 @@ argSplit : func (argStr : String) -> ArrayList<String> {
     args
 }
 
+getRightParen : func (source : String, left : Int) -> Int {
+    open := 1
+    closed := 0
+    for(i in left+1..source length()) {
+        if(source[i] == '(') {
+            open += 1
+        } else if(source[i] == ')') {
+            closed += 1
+        }
+        
+        if(open == closed) {
+            return i
+        }
+    }
+    -1
+}
+
 HtmlVisitor : class extends Visitor {
     html : HtmlWriter
     init : func(=html)
@@ -128,12 +145,14 @@ HtmlVisitor : class extends Visitor {
     visitFunction : func ~directive(node : SFunction, directive : String) {
         signature := node getSignature(true)
         body : String = ""
+        noArgsReturnsTuple := false
         // Get name
         nameNsuffix : String
         if(signature find("(",0) != -1) {
             if(signature find("->",0) != -1) {
                 if(signature findAll("->")[signature findAll("->") getSize() - 1] < signature find("(",0)) {
                     nameNsuffix = signature substring(0,signature findAll("->")[0])
+                    noArgsReturnsTuple = true
                 } else {
                     nameNsuffix = signature substring(0,signature find("(",0))
                 }
@@ -154,17 +173,17 @@ HtmlVisitor : class extends Visitor {
             body += html getTag("span","fsuffix"," " + suffix)
         }
         // Get argument types
-        lastParen := 0
-        arrowPos := (signature contains?("->")) ? signature find("->",0) : signature length() + 1 // Fix for function with no return type
-        if(signature find("(",0) != -1 && signature find(")",0) != -1 && signature find("(",0) < arrowPos && signature find(")",0) < arrowPos) {
-            // This is for functions that return functions that have a return type :o
-            lastParen := signature findAll(")")[signature findAll(")") getSize() - 1]
-            i := 1 as Int
-            while(lastParen > signature find("->",0) && signature findAll(")") getSize() - i >= 0) {
-                i += 1
-                lastParen = signature findAll(")")[signature findAll(")") getSize() - i]
+        leftParen := -1 as Int
+        if(signature contains?("(") && !signature contains?("->")) {
+            leftParen = signature findAll("(")[0]
+        } else if(signature contains?("(") && signature contains?("->")) {
+            if(signature findAll("(")[0] < signature findAll("->")[0]) {
+                leftParen = signature findAll("(")[0]
             }
-            argStr := signature substring(signature find("(",0) + 1, lastParen)
+        }
+        rightParen : Int = (leftParen == -1) ? -1 : getRightParen(signature,leftParen)
+        if(leftParen != -1 && rightParen != -1) {
+            argStr := signature substring(leftParen + 1, rightParen)
             if(argStr != null && !argStr empty?() && argStr != signature) {
                 body += "( "
                 args := argSplit(argStr)
@@ -190,7 +209,7 @@ HtmlVisitor : class extends Visitor {
         if(signature find("->",0) != -1) {
             arrow := signature findAll("->")[0]
             i := 0 as Int
-            while(arrow < lastParen && i < signature findAll("->") getSize()) {
+            while(arrow < rightParen && i+1 < signature findAll("->") getSize()) {
                 i += 1
                 arrow = signature findAll("->")[i]
             }
