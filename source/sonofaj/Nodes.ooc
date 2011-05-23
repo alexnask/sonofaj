@@ -10,9 +10,6 @@ import sonofaj/[Repository, Tag]
 
 // TODO:Interfaces
 // TODO:Named imports
-// TODO:Generic classes must also show the generic types (e.g. ArrayList<Int> not only ArrayList)
-// TODO:Fix bug ( see structs/HashMap -> getStandardEquals )
-// TODO:Fix bug ( see os/Process -> setEnv )
 
 
 readStringList: func (list: ValueList) -> ArrayList<String> {
