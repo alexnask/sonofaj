@@ -57,7 +57,7 @@ SNode: abstract class {
                     // Tuple
                     ret := "("
                     for(arg in tag arguments) {
-                        ret += formatTypeRef(arg value)
+                        ret += formatTypeRef(arg toString())
                         if(tag arguments indexOf(arg) != tag arguments getSize() - 1) {
                             ret += ','
                         }
@@ -76,7 +76,7 @@ SNode: abstract class {
                     if(targ value == "arguments") {
                         ret += "("
                         for(arg in targ arguments) {
-                            ret += formatTypeRef(arg value)
+                            ret += formatTypeRef(arg toString())
                             if(targ arguments indexOf(arg) != targ arguments getSize() - 1) {
                                 ret += ','
                             }
@@ -88,7 +88,7 @@ SNode: abstract class {
                         // Tuple return type
                         ret += "->("
                         for(arg in targ arguments) {
-                            ret += formatTypeRef(arg value)
+                            ret += formatTypeRef(arg toString())
                             if(targ arguments indexOf(arg) != targ arguments getSize() - 1) {
                                 ret += ','
                             }
@@ -752,9 +752,9 @@ SModule: class extends SNode {
             return t
         }
         // VarArgs
-        if(name == "..." || name == "VarArgs") {
+        if(name == "...") {
             v := SAnyType new(repo, parent, this)
-            v name = name
+            v name = "VarArgs"
             return v
         }
         /* TODO: do that with exceptions. */

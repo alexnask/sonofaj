@@ -21,6 +21,21 @@ Tag: class {
     hasArguments: func -> Bool {
         arguments != null
     }
+    
+    toString : func -> String {
+        base := value
+        if(this hasArguments()) {
+            base += '('
+            for(i in 0..arguments getSize()) {
+                base += arguments[i] toString()
+                if(i != arguments getSize() - 1) {
+                    base += ','
+                }
+            }
+            base += ')'
+        }
+        base
+    }
 
     parse: static func (iter: Iterator<Char>, lastChar: Char*, toplevel := true) -> Tag {
         buf := Buffer new()
