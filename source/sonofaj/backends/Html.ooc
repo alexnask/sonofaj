@@ -154,9 +154,17 @@ HtmlVisitor : class extends Visitor {
             body += html getTag("span","fsuffix"," " + suffix)
         }
         // Get argument types
+        lastParen := 0
         arrowPos := (signature contains?("->")) ? signature find("->",0) : signature length() + 1 // Fix for function with no return type
         if(signature find("(",0) != -1 && signature find(")",0) != -1 && signature find("(",0) < arrowPos && signature find(")",0) < arrowPos) {
-            argStr := signature substring(signature find("(",0) + 1, signature findAll(")")[signature findAll(")") getSize() - 1])
+            // This is for functions that return functions that have a return type :o
+            lastParen := signature findAll(")")[signature findAll(")") getSize() - 1]
+            i := 1 as Int
+            while(lastParen > signature find("->",0) && signature findAll(")") getSize() - i >= 0) {
+                i += 1
+                lastParen = signature findAll(")")[signature findAll(")") getSize() - i]
+            }
+            argStr := signature substring(signature find("(",0) + 1, lastParen)
             if(argStr != null && !argStr empty?() && argStr != signature) {
                 body += "( "
                 args := argSplit(argStr)
@@ -180,7 +188,13 @@ HtmlVisitor : class extends Visitor {
         }
         // Get return type
         if(signature find("->",0) != -1) {
-            returnType := signature substring(signature findAll("->")[signature findAll("->") getSize() - 1]+2)
+            arrow := signature findAll("->")[0]
+            i := 0 as Int
+            while(arrow < lastParen && i < signature findAll("->") getSize()) {
+                i += 1
+                arrow = signature findAll("->")[i]
+            }
+            returnType := signature substring(arrow+2)
             returnType = returnType trimLeft()
             retBody := " -> "
             retBody += html getHtmlType(returnType)
