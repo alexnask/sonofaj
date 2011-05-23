@@ -247,7 +247,7 @@ HtmlWriter : class {
             pointer += 1
             ref = ref substring(0,ref length()-1)
         }
-        while(ref endsWith?("&")) {
+        while(ref endsWith?("@")) {
             reference += 1
             ref = ref substring(0,ref length()-1)
         }
@@ -278,8 +278,25 @@ HtmlWriter : class {
             }
             
             typeStr := ref substring(ref find(" ",0) + 1)
+            if(typeStr contains?("<") && typeStr contains?(">")) {
+                // Evaluate generic parameters
+                types := argSplit(typeStr substring(typeStr findAll("<")[0] + 1,typeStr findAll(">")[typeStr findAll(">") getSize() - 1]))
+                end := typeStr substring(typeStr findAll(">")[typeStr findAll(">") getSize() - 1])
+                typeStr = typeStr substring(0,typeStr findAll("<")[0] + 1)
+                for(i in 0..types getSize()) {
+                    typeStr += getHtmlType(types[i])
+                    if(i != types getSize() - 1) {
+                        typeStr += ','
+                    }
+                }
+                typeStr += end
+                // Html escaping =D
+                typeStr = typeStr replaceAll("<","&lt;")
+                typeStr = typeStr replaceAll(">","&gt;")
+            }
+                        
             typeStr += "*" times(pointer)
-            typeStr += "&" times(reference)
+            typeStr += "@" times(reference)
             
             ret += ".html\">%s</a>" format(typeStr)
             return ret
@@ -335,7 +352,7 @@ HtmlWriter : class {
         }
         
         ref += "*" times(pointer)
-        ref += "&" times(reference)
+        ref += "@" times(reference)
         ref
     }
     
