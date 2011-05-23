@@ -145,14 +145,12 @@ HtmlVisitor : class extends Visitor {
     visitFunction : func ~directive(node : SFunction, directive : String) {
         signature := node getSignature(true)
         body : String = ""
-        noArgsReturnsTuple := false
         // Get name
         nameNsuffix : String
         if(signature find("(",0) != -1) {
             if(signature find("->",0) != -1) {
                 if(signature findAll("->")[signature findAll("->") getSize() - 1] < signature find("(",0)) {
                     nameNsuffix = signature substring(0,signature findAll("->")[0])
-                    noArgsReturnsTuple = true
                 } else {
                     nameNsuffix = signature substring(0,signature find("(",0))
                 }
