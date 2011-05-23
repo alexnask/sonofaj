@@ -151,8 +151,8 @@ HtmlVisitor : class extends Visitor {
             if(argStr != null && !argStr empty?() && argStr != signature) {
                 body += "( "
                 args := argSplit(argStr)
-                for(arg in args) {
-                    original := arg
+                for(i in 0 .. args getSize()) {
+                    arg := args[i]
                     arg = arg trimLeft()
                     if(!arg startsWith?(":")) {
                         // It has a name :)
@@ -162,7 +162,7 @@ HtmlVisitor : class extends Visitor {
                     }
                     // Get argument type :) 
                     body += html getHtmlType(arg)
-                    if(args indexOf(original) != args getSize() - 1) {
+                    if(i != args getSize() - 1) {
                         body += ", "
                     }
                 }
@@ -230,15 +230,16 @@ HtmlWriter : class {
     init : func(=module,=writer)
     
     getHtmlType : func(ref : String) -> String {
-        pointer := false
-        reference := false
+        pointer := 0 as Int
+        reference := 0 as Int
         ref = ref trimRight()
         ref = ref trimLeft()
-        if(ref endsWith?("*")) {
-            pointer = true
+        while(ref endsWith?("*")) {
+            pointer += 1
             ref = ref substring(0,ref length()-1)
-        } else if(ref endsWith?("&")) {
-            reference = true
+        }
+        while(ref endsWith?("&")) {
+            reference += 1
             ref = ref substring(0,ref length()-1)
         }
         ref = ref trimRight()
@@ -268,9 +269,8 @@ HtmlWriter : class {
             }
             
             typeStr := ref substring(ref find(" ",0) + 1)
-            if(pointer) typeStr+="*"
-            if(reference) typeStr+="&"
-            
+            typeStr += "*" times(pointer)
+            typeStr += "&" times(reference)
             
             ret += ".html\">%s</a>" format(typeStr)
             return ret
@@ -325,8 +325,8 @@ HtmlWriter : class {
             return ret
         }
         
-        if(pointer) ref+="*"
-        if(reference) ref+="&"
+        ref += "*" times(pointer)
+        ref += "&" times(reference)
         ref
     }
     
