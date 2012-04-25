@@ -50,6 +50,9 @@ Repository: class {
         lastIndex := parts lastIndex()
         parts[lastIndex] = parts[lastIndex] + ".json"
         path := parts join(File separator)
+        if(root getChild(path) exists?()) {
+            return root getChild(path) path
+        }
         for(subdir: File in root getChildren()) {
             if(subdir dir?() && subdir getChild(path) exists?()) {
                 return subdir getChild(path) path
@@ -60,8 +63,13 @@ Repository: class {
 
     getModuleFilenames: func ~entry -> ArrayList<String> {
         names := ArrayList<String> new()
-        for(dir in root getChildren())
-            names addAll(getModuleFilenames(dir))
+        for(dir in root getChildren()) {
+            if(dir file?() && dir name() endsWith?(".json")) {
+                name := dir name()
+                names add(name substring(0, name length() - 5))
+            }
+            else names addAll(getModuleFilenames(dir))
+        }
         names
     }
 

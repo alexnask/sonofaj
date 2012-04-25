@@ -5,6 +5,11 @@ import structs/[ArrayList,HashMap]
 import sonofaj/[Doc, Nodes, Repository, Visitor]
 import sonofaj/backends/Backend
 
+// TODO: Fix bug (see lang/Iterators -> Iterator::eachUntil and structs/ArrayList -> ArrayList::sort and literals in structs/List)
+// Seems to be a bug of a single argument function with the argument being a function that returns bool
+// TODO: Generate anchors on every class / function / cover / enum declaration and append them to links
+// TODO: Create literals section? 
+
 argSplit : func (argStr : String) -> ArrayList<String> {
     // Splits an argument string correctly, that is, taking in mind that Func's can contain strings
     args := argStr split(',')

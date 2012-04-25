@@ -12,7 +12,7 @@ setupParser: func -> Parser {
     parser := Parser new()
     
     backend := StringOption new("backend") .shortName("b") .longName("backend") \
-              .help("Specify the sonofaj backend. Possible: sphinx") .metaVar("NAME")
+              .help("Specify the sonofaj backend. Possible: sphinx, html") .metaVar("NAME")
     repo := StringOption new("repo") .shortName("r") .longName("repo") \
            .help("Specify the repository.") .metaVar("DIR")
     package := StringOption new("package") .shortName("p") .longName("package") \

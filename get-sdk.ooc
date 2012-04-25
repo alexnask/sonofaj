@@ -28,13 +28,10 @@ import text/StringTemplate
 import text/EscapeSequence
 import text/json/Parser
 import text/json/Generator
-import net/HTTPRequest
-import net/StreamSocket
 import net/DNS
 import net/ServerSocket
 import net/Exceptions
 import net/Socket
-import net/RestClient
 import net/berkeley
 import net/Address
 import structs/ArrayList
