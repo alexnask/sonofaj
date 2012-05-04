@@ -1,9 +1,5 @@
-import structs/[ArrayList, HashMap, HashBag]
+import structs/[ArrayList, HashMap, HashBag, Bag]
 import text/StringTokenizer
-
-use yajl
-
-import yajl/Yajl
 
 import sonofaj/[Repository, Tag]
 
@@ -12,13 +8,13 @@ import sonofaj/[Repository, Tag]
 // TODO:Named imports
 
 
-readStringList: func (list: ValueList) -> ArrayList<String> {
+readStringList: func (list: Bag) -> ArrayList<String> {
     ret := ArrayList<String> new()
-    for(value: Value<Pointer> in list) {
-        if(value getType() != ValueType STRING) {
-            JSONException new("Expected string, got %d" format(value getType())) throw()
+    for(i: SizeT in 0..list size) {
+        if(list getClass(i) != String) {
+            JSONException new("Expected string, got %d" format(list getClass(i) name)) throw()
         }
-        ret add(value value as String)
+        ret add(list get(i, String))
     }
     ret
 }
@@ -43,7 +39,7 @@ SNode: abstract class {
     parent: SNode
 
     init: func (=repo, =parent, =module)
-    read: abstract func (value: Value<Pointer>)
+    read: abstract func <T> (value: T)
 
     getIdentifier: func -> String {
         name
@@ -156,8 +152,8 @@ SNode: abstract class {
 
     getRef: abstract func -> String
 
-    createNode: func (entity: Value<Pointer>) -> This {
-        value := (entity value as ValueMap)["type", String]
+    createNode: func <T> (entity: T) -> This {
+        value := (entity as HashBag) get("type", String)
         match (value) {
             case "method" => {
                 node := SMethod new(repo, this, module)
@@ -313,35 +309,47 @@ SFunction: class extends SNode {
         getSignature(false)
     }
 
-    read: func (value: Value<Pointer>) {
-        entity := value value as ValueMap
+    read: func <T> (value: T) {
+        entity := value as HashBag
         // name
-        name = entity["name", String]
+        name = entity get("name", String)
         name = name replaceAll("__quest","?")
         // modifiers
-        modifiers = readStringList(entity["modifiers", ValueList])
+        modifiers = readStringList(entity get("modifiers", Bag))
         // genericTypes
-        genericTypes = readStringList(entity["genericTypes", ValueList])
+        genericTypes = readStringList(entity get("genericTypes", Bag))
         // extern
-        extern_ = entity["extern", Bool]
+        if(entity getClass("extern") == Bool) {
+            extern_ = entity get("extern", Bool)
+        } else {
+            "Ignoring extern name: %s (TODO)" printfln(name)
+        }
         // returnType
-        returnType = entity["returnType", String] // can also be null
+        if(entity getClass("returnType") == Pointer) {
+            returnType = null
+        } else {
+            returnType = entity get("returnType", String)
+        }
         
         // unmangled
-        unmangled_ = entity["unmangled", Bool]
+        unmangled_ = entity get("unmangled", Bool)
         // fullName
-        fullName = entity["fullName", String]
+        fullName = entity get("fullName", String)
         // doc
-        doc = entity["doc", String] // can also be null
+        if(entity getClass("doc") == Pointer) {
+            doc = null
+        } else {
+            doc = entity get("doc", String) // can also be null
+        }
         // arguments
         arguments = ArrayList<SArgument> new()
-        argumentsList := entity["arguments", ValueList]
-        for(argumentsValue: Value<ValueList> in argumentsList) {
-            argumentsObject := argumentsValue value as ValueList
+        argumentsList := entity get("arguments", Bag)
+        for(i: SizeT in 0..argumentsList size) {
+            argumentsObject := argumentsList get(i, Bag)
             argument := SArgument new()
-            argument name = argumentsObject[0, String]
-            argument type = argumentsObject[1, String]
-            _blah := argumentsObject[2, ValueList]
+            argument name = argumentsObject get(0, String)
+            argument type = argumentsObject get(1, String)
+            _blah := argumentsObject get(2, Bag)
             if(_blah != null) {
                 argument modifiers = readStringList(_blah)
             } else {
@@ -403,23 +411,31 @@ SGlobalVariable: class extends SNode {
         ":var:`~%s %s`" format(module getIdentifier(), getIdentifier())
     }
 
-    read: func (value: Value<Pointer>) {
-        entity := value value as ValueMap
+    read: func <T> (value: T) {
+        entity := value as HashBag
         // name
-        name = entity["name", String]
+        name = entity get("name", String)
         name = name replaceAll("__quest","?")
         // modifiers
-        modifiers = readStringList(entity["modifiers", ValueList])
+        modifiers = readStringList(entity get("modifiers", Bag))
         // value
-        this value = entity["value", String]
+        if(entity getClass("value") == Pointer) {
+            this value = null
+        } else {
+            this value = entity get("value", String)
+        }
         // varType
-        varType = entity["varType", String]
+        varType = entity get("varType", String)
         // extern
-        extern_ = entity["extern", Bool]
+        if(entity getClass("extern") == Bool) {
+            extern_ = entity get("extern", Bool)
+        } else {
+            "Ignoring extern name: %s (TODO)" printfln(name)
+        }
         // unmangled; dirty workaround since j/ooc has problems with decls inside of version blocks not considered global; and even dirtier now.
-        unmangled_ = entity["unmangled", Bool]
+        unmangled_ = entity get("unmangled", Bool)
         // fullName
-        fullName = entity["fullName", String]
+        fullName = entity get("fullName", String)
     }
 
     getTypeIdentifier: func ~my -> String {
@@ -440,18 +456,26 @@ SField: class extends SGlobalVariable {
         ":field:`~%s %s %s`" format(module getIdentifier(), parent getIdentifier(), getIdentifier())
     }
 
-    read: func (value: Value<Pointer>) {
-        entity := value value as ValueMap
+    read: func <T> (value: T) {
+        entity := value as HashBag
         // name
-        name = entity["name", String]
+        name = entity get("name", String)
         // modifiers
-        modifiers = readStringList(entity["modifiers", ValueList])
+        modifiers = readStringList(entity get("modifiers", Bag))
         // value
-        this value = entity["value", String]
+        if(entity getClass("value") == Pointer) {
+            this value = null
+        } else {
+            this value = entity get("value", String)
+        }
         // varType
-        varType = entity["varType", String]
+        varType = entity get("varType", String)
         // extern
-        extern_ = entity["extern", Bool]
+        if(entity getClass("extern") == Bool) {
+            extern_ = entity get("extern", Bool)
+        } else {
+            "Ignoring extern name: %s (TODO)" printfln(name)
+        }
     }
 
     getTypeIdentifier: func ~my -> String {
@@ -509,29 +533,37 @@ SClass: class extends SType {
             return null
     }
 
-    read: func (value: Value<Pointer>) {
-        entity := value value as ValueMap
+    read: func <T> (value: T) {
+        entity := value as HashBag
         // name
-        name = entity["name", String]
+        name = entity get("name", String)
         name = name replaceAll("__quest","?")
         // genericTypes
-        genericTypes = readStringList(entity["genericTypes", ValueList])
+        genericTypes = readStringList(entity get("genericTypes", Bag))
         // extends
-        extends_ = entity["extends", String] // can also be null
+        if(entity getClass("extends") == Pointer) {
+            extends_ = null
+        } else {
+            extends_ = entity get("extends", String) // can also be null
+        }
         // abstract
-        abstract_ = entity["abstract", Bool]
+        abstract_ = entity get("abstract", Bool)
         // fullName
-        fullName = entity["fullName", String]
+        fullName = entity get("fullName", String)
         // doc
-        doc = entity["doc", String] // can also be null
+        if(entity getClass("doc") == Pointer) {
+            doc = null
+        } else {
+            doc = entity get("doc", String) // can also be null
+        }
         // members
         members = ArrayList<SMember> new()
-        membersList := entity["members", ValueList]
-        for(membersValue: Value<ValueList> in membersList) {
-            membersObject := membersValue value as ValueList
+        membersList := entity get("members", Bag)
+        for(i: SizeT in 0..membersList size) {
+            membersObject := membersList get(i, Bag)
             member := SMember new()
-            member name = membersObject[0, String]
-            node := createNode(membersObject get(1))
+            member name = membersObject get(0, String)
+            node := createNode(membersObject get(1, HashBag))
             member node = node
             members add(member)
         }
@@ -576,27 +608,39 @@ SCover: class extends SType {
         ":cover:`~%s %s`" format(module getIdentifier(), getIdentifier())
     }
 
-    read: func (value: Value<Pointer>) {
-        entity := value value as ValueMap
+    read: func <T> (value: T) {
+        entity := value as HashBag
         // name
-        name = entity["name", String]
+        name = entity get("name", String)
         name = name replaceAll("__quest","?")
         // fullName
-        fullName = entity["fullName", String]
+        fullName = entity get("fullName", String)
         // extends
-        extends_ = entity["extends", String] // can also be null
+        if(entity getClass("extends") == Pointer) {
+            extends_ = null
+        } else {
+            extends_ = entity get("extends", String)
+        }
         // from
-        from_ = entity["from", String]
+        if(entity getClass("from") == Pointer) {
+            from_ = null
+        } else {
+            from_ = entity get("from", String)
+        }
         // doc
-        doc = entity["doc", String] // can also be null
+        if(entity getClass("doc") == Pointer) {
+            doc = null
+        } else {
+            doc = entity get("doc", String) // can also be null
+        }
         // members
         members = ArrayList<SMember> new()
-        membersList := entity["members", ValueList]
-        for(membersValue: Value<ValueList> in membersList) {
-            membersObject := membersValue value as ValueList
+        membersList := entity get("members", Bag)
+        for(i: SizeT in 0..membersList size) {
+            membersObject := membersList get(i, Bag)
             member := SMember new()
-            member name = membersObject[0, String]
-            node := createNode(membersObject get(1))
+            member name = membersObject get(0, String)
+            node := createNode(membersObject get(1, HashBag))
             member node = node
             members add(member)
         }
@@ -622,23 +666,31 @@ SEnum : class extends SType {
         ":enum:`~%s %s`" format(module getIdentifier(), getIdentifier())
     }
 
-    read: func (value: Value<Pointer>) {
-        entity := value value as ValueMap
+    read: func <T> (value: T) {
+        entity := value as HashBag
         // name
-        name = entity["name", String]
+        name = entity get("name", String)
         name = name replaceAll("__quest","?")
         // extern
-        extern_ = entity["extern", Bool]
+        if(entity getClass("extern") == Bool) {
+            extern_ = entity get("extern", Bool)
+        } else {
+            "Ignoring extern name: %s (TODO)" printfln(name)
+        }
         // doc
-        doc = entity["doc", String] // can also be null
+        if(entity getClass("doc") == Pointer) {
+            doc = null
+        } else {
+            doc = entity get("doc", String) // can also be null
+        }
         // members
         members = ArrayList<SMember> new()
-        membersList := entity["elements", ValueList]
-        for(membersValue: Value<ValueList> in membersList) {
-            membersObject := membersValue value as ValueList
+        membersList := entity get("elements", Bag)
+        for(i: SizeT in 0..membersList size) {
+            membersObject := membersList get(i, Bag)
             member := SEnumElement new()
-            member name = membersObject[0, String]
-            member doc = membersObject[1, ValueMap]["doc",String]
+            member name = membersObject get(0, String)
+            member doc = membersObject get(1, HashBag) get("doc",String)
             members add(member)
         }
     }
@@ -652,7 +704,7 @@ SAnyType : class extends SType {
         name
     }
     
-    read: func (value : Value<Pointer>)
+    read: func <T> (value: T)
 }
 
 SModule: class extends SNode {
@@ -672,7 +724,7 @@ SModule: class extends SNode {
         ":mod:`~%s`" format(getIdentifier())
     }
 
-    createChild: func (entity: Value<Pointer>) {
+    createChild: func <T> (entity: T) {
         node := createNode(entity)
         if(node != null) /* happens for the `module` node */
             addNode(node)
@@ -682,20 +734,18 @@ SModule: class extends SNode {
         children[node name] = node
     }
     
-    read: func (value: Value<Pointer>) {
+    read: func <T> (value: T) {
         // We want the entities
-        if(value type == ValueMap) {
-            map := value value as ValueMap
+        if(T == HashBag) {
+            map := value as HashBag
             readModule(value)
-            if(map getType("entities") == ValueList) {
-                entities := map["entities",ValueList]
+            if(map getClass("entities") == Bag) {
+                entities := map get("entities", Bag)
                 if(entities != null) {
-                    for(entity in entities) {
+                    for(i: SizeT in 0..entities size) {
                         // Get all entities and read them
-                        if(entity != null) {
-                            if(entity type == ValueList) {
-                                createChild(entity value as ValueList get(1))
-                            }
+                        if(entities getClass(i) == Bag) {
+                            createChild(entities get(i, Bag) get(1, HashBag))
                         }
                     }
                 }
@@ -703,14 +753,14 @@ SModule: class extends SNode {
         }
     }
 
-    readModule: func (value: Value<Pointer>) {
-        entity := value value as ValueMap
-        if(entity getType("globalImports") == ValueList) {
-            imports = readStringList(entity["globalImports", ValueList])
+    readModule: func <T> (value: T) {
+        entity := value as HashBag
+        if(entity getClass("globalImports") == Bag) {
+            imports = readStringList(entity get("globalImports", Bag))
             // TODO: Manage namespaced imports
         }
-        if(entity getType("path") == String) {
-            path = entity["path", String]
+        if(entity getClass("path") == String) {
+            path = entity get("path", String)
             name = path
         }
     }

@@ -1,7 +1,6 @@
 import io/[File, FileReader]
-import structs/[ArrayList, HashMap]
-import text/StringTokenizer
-import yajl/Yajl
+import structs/[ArrayList, HashMap, HashBag]
+import text/[StringTokenizer, json]
 
 import sonofaj/Nodes
 
@@ -30,11 +29,8 @@ Repository: class {
     loadModule: func (module: String) -> SModule {
         ("Loading module " + module) println()
         reader := FileReader new(getModuleFilename(module))
-        parser := SimpleParser new()
-        parser parseAll(reader)
-        reader close()
         node := SModule new(this)
-        node read(parser getValue())
+        node read(JSON parse(reader, HashBag))
         node
     }
     
