@@ -47,6 +47,10 @@ RSTVisitor: class extends Visitor {
     init: func (=rst) {}
 
     visitFunction: func ~withDirective (node: SFunction, directive: String) {
+        if(node name startsWith?("__") && node name endsWith?("_thunk")) {
+            // don't write closure thunks.
+            return
+        }
         // Works fine =D
         rst writeLine(".. %s:: %s" format(directive, node getSignature(true)))
         // stuff.
@@ -74,10 +78,14 @@ RSTVisitor: class extends Visitor {
     } 
 
     visitClass: func (node: SClass) {
-        rst writeLine(".. class:: %s" format(node getIdentifier()))
+        rst writeLine(".. class:: %s" format(node getIdentifier(false)))
         // stuff!
         rst indent()
         rst writeLine("")
+        // generic types
+        if(!node genericTypes empty?()) {
+            rst writeLine(":generics: %s" format(node genericTypes join(", ")))
+        }
         // extends
         if(node extends_ != null) {
             rst writeLine(":extends: %s" format(node getExtendsRef()))
@@ -108,6 +116,10 @@ RSTVisitor: class extends Visitor {
     }
  
     visitCover: func (node: SCover) {
+        if(node name startsWith?("__") && node name endsWith?("_ctx")) {
+            // don't write closure contexts
+            return
+        }
         rst writeLine(".. cover:: %s" format(node getIdentifier()))
         // stuff!
         rst indent()

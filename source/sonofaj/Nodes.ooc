@@ -79,10 +79,10 @@ SNode: abstract class {
                         }
                         ret += ")"
                     } else if(targ value == "return") {
-                        ret += "->" + formatTypeRef(targ arguments[0] value)
+                        ret += " -> " + formatTypeRef(targ arguments[0] value)
                     } else if(targ value == "multi") {
                         // Tuple return type
-                        ret += "->("
+                        ret += " -> ("
                         for(arg in targ arguments) {
                             ret += formatTypeRef(arg toString())
                             if(targ arguments indexOf(arg) != targ arguments getSize() - 1) {
@@ -523,7 +523,7 @@ SClass: class extends SType {
     }
 
     getRef: func -> String {
-        ":class:`~%s %s`" format(module getIdentifier(), getIdentifier())
+        ":class:`~%s %s`" format(module getIdentifier(), getIdentifier(false))
     }
 
     getExtendsRef: func -> String {
@@ -569,8 +569,8 @@ SClass: class extends SType {
         }
     }
 
-    getIdentifier: func -> String {
-        if(!genericTypes empty?()) {
+    getIdentifier: func ~genericTypes (withGenericTypes: Bool) -> String {
+        if(withGenericTypes && !genericTypes empty?()) {
             buf := Buffer new()
             buf append(name) .append('<')
             first := true
@@ -586,6 +586,10 @@ SClass: class extends SType {
         } else {
             return name
         }
+    }
+
+    getIdentifier: func -> String {
+        getIdentifier(true)
     }
 }
 
