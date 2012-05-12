@@ -154,7 +154,7 @@ RSTVisitor: class extends Visitor {
         }
         // members.
         for(member in node members) {
-            rst writeLine(".. enumElement:: %s" format(member name))
+            rst writeLine(".. field:: %s" format(member name))
             if(member doc != null) {
                 rst indent()
                 rst writeLine(formatDoc(member doc))
