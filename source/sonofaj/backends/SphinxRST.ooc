@@ -190,7 +190,7 @@ SphinxRSTBackend: class extends Backend {
         if(module path != null && !module path empty?()) {
             ("Handling module " + module name + ".") println() 
             file := outPath getChild(module path + ".rst") /* TODO: does this work in all cases? */
-            file parent() mkdirs()
+            file parent mkdirs()
             rst := RSTWriter new(FileWriter new(file))
             visitor := RSTVisitor new(rst)
             /* headline & .. module directive. */
