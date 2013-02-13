@@ -481,7 +481,7 @@ HtmlBackend : class extends Backend {
         if(module path != null && !module path empty?()) {
             ("Handling module " + module name + ".") println() 
             file := outPath getChild(module path + ".html") /* TODO: does this work in all cases? */
-            file parent() mkdirs()
+            file parent mkdirs()
             html := HtmlWriter new(module,FileWriter new(file))
             visitor := HtmlVisitor new(html)
             html writeBeginning(module name) \

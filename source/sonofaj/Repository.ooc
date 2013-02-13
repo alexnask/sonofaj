@@ -60,8 +60,8 @@ Repository: class {
     getModuleFilenames: func ~entry -> ArrayList<String> {
         names := ArrayList<String> new()
         for(dir in root getChildren()) {
-            if(dir file?() && dir name() endsWith?(".json")) {
-                name := dir name()
+            if(dir file?() && dir name endsWith?(".json")) {
+                name := dir name
                 names add(name substring(0, name length() - 5))
             }
             else names addAll(getModuleFilenames(dir))
@@ -73,15 +73,15 @@ Repository: class {
         // first, get all that we have here. Let's say "*.json" is a module.
         names := ArrayList<String> new()
         for(child in dir getChildren()) {
-            if(child file?() && child name() endsWith?(".json")) {
-                childName := child name()
+            if(child file?() && child name endsWith?(".json")) {
+                childName := child name
                 names add(childName substring(0, childName length() - 5))
             }
         }
         // now, get all subdirectories.
         for(child in dir getChildren()) {
             if(child dir?()) {
-                childName := child name()
+                childName := child name
                 for(name in getModuleFilenames(child)) {
                     names add("%s/%s" format(childName, name))
                 }
