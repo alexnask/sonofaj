@@ -93,7 +93,8 @@ RSTVisitor: class extends Visitor {
         }
         // members.
         for(member in node members) {
-            match (member node type) {
+            // Ignore private stuff
+            if(!member name startsWith?('_')) match (member node type) {
                 case "method" => {
                     if(member node as SFunction hasModifier("static"))
                         visitFunction(member node as SFunction, "staticmethod")
@@ -112,10 +113,6 @@ RSTVisitor: class extends Visitor {
     }
  
     visitCover: func (node: SCover) {
-        if(node name startsWith?("__") && node name endsWith?("_ctx")) {
-            // don't write closure contexts
-            return
-        }
         rst writeLine(".. cover:: %s" format(node getIdentifier()))
         // stuff!
         rst indent()
@@ -135,7 +132,7 @@ RSTVisitor: class extends Visitor {
         }
         // members.
         for(member in node members) {
-            match (member node type) {
+            if(!member name startsWith?('_')) match (member node type) {
                 case "method" => {
                     visitFunction(member node as SFunction, "method")
                 }
@@ -162,12 +159,14 @@ RSTVisitor: class extends Visitor {
         }
         // members.
         for(member in node members) {
-            rst writeLine(".. field:: %s" format(member name))
-            if(member doc != null) {
-                rst indent()
-                rst writeLine(formatDoc(member doc))
-                rst writeLine("")
-                rst dedent()
+            if(!member name startsWith?('_')) {
+                rst writeLine(".. field:: %s" format(member name))
+                if(member doc != null) {
+                    rst indent()
+                    rst writeLine(formatDoc(member doc))
+                    rst writeLine("")
+                    rst dedent()
+                }
             }
         }
         rst dedent()
