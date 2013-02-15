@@ -14,7 +14,8 @@ Visitor: abstract class {
     }
 
     visit: func (node: SNode) {
-        match (node type) {
+        // We ignore all private stuff (names starting with _)
+        if(!node name startsWith?('_')) match (node type) {
             case "function" => { visitFunction(node as SFunction) }
             case "class" => { visitClass(node as SClass) }
             case "cover" => { visitCover(node as SCover) }

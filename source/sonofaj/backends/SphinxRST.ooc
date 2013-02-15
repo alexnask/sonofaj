@@ -47,10 +47,6 @@ RSTVisitor: class extends Visitor {
     init: func (=rst) {}
 
     visitFunction: func ~withDirective (node: SFunction, directive: String) {
-        if(node name startsWith?("__") && node name endsWith?("_thunk")) {
-            // don't write closure thunks.
-            return
-        }
         // Works fine =D
         rst writeLine(".. %s:: %s" format(directive, node getSignature(true)))
         // stuff.
